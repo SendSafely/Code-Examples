@@ -26,18 +26,23 @@ try {
         var sendSafelyMembers = [];
         var sendSafelyMemberIds = [];
 
-        var zdResponse = makeZendeskRequestSync("GET", "/api/v2/search.json?query=type:user%20tags:" + packageToTag[key]);
-        if (zdResponse.status == 401) {
-            console.log("Zendesk Authentication Error: " + zdResponse.getBody('utf8'));
-            return;
-        }
-        var matches = JSON.parse(zdResponse.getBody('utf8')).results;
-        for (var i = 0; i < matches.length; i++) {
-            if (matches[i].active && !matches[i].suspended) {
-                zendeskMembers.push(matches[i].email.toLowerCase());
-                console.log("Got Zendesk User: " + matches[i].email);
+        var nextPage = zdHost + "/api/v2/search.json?query=type:user%20tags:" + packageToTag[key];
+        while (nextPage != null) {
+            var zdResponse = makeZendeskRequestSync("GET", nextPage);
+            if (zdResponse.status == 401) {
+                console.log("Zendesk Authentication Error: " + zdResponse.getBody('utf8'));
+                return;
             }
+            var matches = JSON.parse(zdResponse.getBody('utf8')).results;
+            for (var i = 0; i < matches.length; i++) {
+                if (matches[i].active && !matches[i].suspended) {
+                    zendeskMembers.push(matches[i].email.toLowerCase());
+                    console.log("Got Zendesk User: " + matches[i].email);
+                }
+            }
+            nextPage = JSON.parse(zdResponse.getBody('utf8')).next_page;
         }
+
         if (zendeskMembers.length == 0) {
             console.log("Warning: No users found for Zendesk Tag " + packageToTag[key]);
         }
@@ -88,7 +93,7 @@ function makeZendeskRequestSync(method, url) {
         'Authorization': zdAuthHeader
     };
     requestOptions["headers"] = requestHeaders;
-    var res = requestSync(method, zdHost + url, requestOptions);
+    var res = requestSync(method, url, requestOptions);
     return res;
 }
 
