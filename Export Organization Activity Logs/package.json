@@ -1,0 +1,21 @@
+{
+  "name": "export-organization-activity-logs",
+  "version": "1.0.0",
+  "scripts": {
+    "activity": "node ./GetOrganizationActivity.js",
+    "downloads": "node ./GetOrganizationDownloads.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SendSafely/Code-Examples.git"
+  },
+  "author": "SendSafely",
+  "bugs": {
+    "url": "https://github.com/SendSafely/Code-Examples/issues"
+  },
+  "homepage": "https://github.com/SendSafely/Code-Examples#readme",
+  "dependencies": {
+    "axios": "^0.20.0",
+    "sjcl": "^1.0.8"
+  }
+}

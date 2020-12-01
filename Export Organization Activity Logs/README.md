@@ -1,30 +1,39 @@
 # Instructions for running Organization Activity Export Scripts #
 
-In order to run the script, you will need to have Node.js installed. Here are instructions on how to install node and run the script:
+The Organization Activity Export scripts require Node.js installed to run them. 
 
-**1)** Visit https://nodejs.org/en/ and install the most recent version of Node.js.
+- **GetOrganizationActivity.js** - exports all sent and received activity within your SendSafely portal within the specified timeframe
+- **GetOrganizationDownloads.js** - exports all of the confirmed download activity for sent and received items within your SendSafely portal within the specified timeframe
 
-**2)** You will need to update a few variables at the top of the script so that it can authenticate using a SendSafely admin account. The following lines will need to be edited:
+Here are instructions on how to install node and run the scripts:
 
-```var ssHost = "https://yourcompany.sendsafely.com";
-var ssApiKey = "PUT_YOUR_API_KEY_HERE";
-var ssApiSecret = "PUT_YOUR_API_SECRET_HERE";
-var fromDate = '3/1/2020';
-var toDate = '4/1/2020';
+**1)** Visit https://nodejs.org/en/ and install the most recent LTS version of Node.js.
+
+**2)** Download the latest [Export Organization Activity Logs.zip](https://github.com/SendSafely/Code-Examples/raw/master/Export%20Organization%20Activity%20Logs/dist/Export%20Organization%20Activity%20Logs.zip) file to your file system and extract to a folder. Alternatively, you can clone the entire [Code-Examples GitHub repository](https://github.com/SendSafely/Code-Examples.git) to your file system.
+ 
+**3)** Update the user defined parameters at the top of the GetOrganizationActivity.js and GetOrganizationDownloads.js scripts in the "Export Organization Activity Logs" folder. The scripts require use of a SendSafely Enterprise Administrator API key and secret which can be obtained from the API Keys section of your Profile page when logged into SendSafely. Specifically, the following constants will need to be updated in each script:
+
+```
+/* START USER DEFINED PARAMETERS */
+
+const ssHost = "https://yourcompany.sendsafely.com";
+const ssApiKey = "PUT_YOUR_API_KEY_HERE";
+const ssApiSecret = "PUT_YOUR_API_SECRET_HERE";
+
+const fromDate = '3/1/2020';
+const toDate = '10/10/2020';
+
+/* END USER DEFINED PARAMETERS */
 ```
 
-**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following commands to install three required node modules (this command must be run from the same folder where the script is stored):
+**4)** Save the edited scripts and open a command line window. Navigate to the folder containing the scripts and run the following command to install required node modules (this command must be run from the same folder where the scripts are stored):
 
-`npm install sync-request`
+`npm install`
 
-`npm install moment`
+**5)** Next, the scripts can be run using the following commands:
 
-`npm install sjcl`
+`npm run activity`
 
-**4)** Next, run the script using the following command:
+`npm run downloads`
 
-`node GetOrganizationActivity.js`
-
-`node GetOrganizationDownloads.js`
-
-The script will print CSV output to the screen which can then be imported into excel or another program for further analysis. 
+The scripts will print CSV output to the screen which may imported into Excel or another program for further analysis. 
