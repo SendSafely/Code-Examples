@@ -21,7 +21,7 @@ The app requires the following command line parameters:
 
   - GET-FILES: Downloads the files for a package. This command requires the following additional parameters:
 
-    - KeyFile: The file containing your endSafely Private Key. The private key can be generated using CREATE-KEY 
+    - KeyFile: The file containing your SendSafely Private Key. The private key can be generated using CREATE-KEY 
 
     - KeyId: The unique KeyId associated with your SendSafely Private Key. A Private Key can be generated using CREATE-KEY 
 
