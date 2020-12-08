@@ -17,7 +17,7 @@ Below are instructions on how to install Node.js and run the script. For more de
 
 **1)** Visit https://nodejs.org/en/ and install the most recent LTS version of Node.js
 
-**2)** Download the latest Workspace Export.zip file from the "dist" folder and extract to a folder on your file system. Alternatively, you can clone the entire [Code-Examples GitHub repository](https://github.com/SendSafely/Code-Examples.git) to your file system.
+**2)** Download the latest [Workspace Export.zip file from the "dist"](https://github.com/SendSafely/Code-Examples/tree/master/Workspace%20Export/dist) folder and extract to a folder on your file system. Alternatively, you can clone the entire [Code-Examples GitHub repository](https://github.com/SendSafely/Code-Examples.git) to your file system.
 
 **3)** Open a command line prompt using CMD on Windows or the Terminal program on MacOSX, change into the folder containing the script, and run the following command to install required Node modules: 
 
