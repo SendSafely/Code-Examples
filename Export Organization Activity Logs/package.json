@@ -15,7 +15,7 @@
   },
   "homepage": "https://github.com/SendSafely/Code-Examples#readme",
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.20.0",
     "sjcl": "^1.0.8"
   }
 }

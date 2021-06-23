@@ -112,7 +112,7 @@ function makeSSRequestSync(method, url, messageData) {
         'ss-api-key': ssApiKey,
         'ss-request-timestamp': timestamp,
         'ss-request-signature': signature,
-        'ss-request-api': 'JS_API',
+        'ss-request-api': 'NODE_API',
         'Content-Type': 'application/json'
     };
     requestOptions["headers"] = requestHeaders;

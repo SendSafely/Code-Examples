@@ -32,4 +32,4 @@ var packageToTag = {
 
 `node SyncGuideToWorkspace.js`
 
-The script will synchronize the list of Workspace collaborators in each of the product Workspaces with the list of segment members. For more detailed information on how to use this script, refer to "Step 5 - Synchronize Workspace Collaborators and Zendesk Segment Members" in our Help Center(https://sendsafely.zendesk.com/hc/en-us/articles/360029571932) guide. 
+The script will synchronize the list of Workspace collaborators in each of the product Workspaces with the list of segment members. For more detailed information on how to use this script, refer to "Step 5 - Synchronize Workspace Collaborators and Zendesk Segment Members" in our [Help Center article](https://sendsafely.zendesk.com/hc/en-us/articles/360029571932). 

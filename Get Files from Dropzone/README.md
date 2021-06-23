@@ -3,34 +3,36 @@
 In order to run this app, you will need to have a valid SendSafely account with a Dropzone enabled. The SLN file can be opened and compiled using Visual Studio.
 
 You can run the app from the command line using the following syntax:
+
 `SendSafelyConsoleApplication.exe SendSafelyHost UserApiKey UserApiSecret COMMAND`
 
 The app requires the following command line parameters: 
 
-- SendSafelyHost: The SendSafely hostname to connect to.  Enterprise users should connect to their designated hostname (ie company-name.sendsafely.com)
+- **SendSafelyHost**: The SendSafely hostname to connect to.  Enterprise users should connect to their designated hostname (ie company-name.sendsafely.com)
 
-- UserApiKey: The API key for the user you want to connect to.  API Keys can be obtained from the Edit Profile screen when logged in to SendSafely
+- **UserApiKey**: The API key for the user you want to connect to.  API Keys can be obtained from the Edit Profile screen when logged in to SendSafely
 
-- UserApiSecret: The API Secret associated with the API Key used above.  The API Secret is provided to you when you generate a new API Key.  
+- **UserApiSecret**: The API Secret associated with the API Key used above.  The API Secret is provided to you when you generate a new API Key.  
 
-- COMMAND: The command to perform, must be either CREATE-KEY, LIST-PACKAGES or GET-FILES
+- **COMMAND**: The command to perform, must be either CREATE-KEY, LIST-PACKAGES or GET-FILES
 
-  - CREATE-KEY: Generates a trusted device key that can be used to decrypt incoming files. This command produces a private key file named key_id.key, where key_id is the unique key id associated with the private key.
+  - **CREATE-KEY**: Generates a trusted device key that can be used to decrypt incoming files. This command produces a private key file named key_id.key, where key_id is the unique key id associated with the private key.
  
-  - LIST-PACKAGES: Lists all active packages that are available for download and includes the package ID for each. 
+  - **LIST-PACKAGES**: Lists all active packages that are available for download and includes the package ID for each. 
 
-  - GET-FILES: Downloads the files for a package. This command requires the following additional parameters:
+  - **GET-FILES**: Downloads the files for a package. This command requires the following additional parameters:
 
-    - KeyFile: The file containing your SendSafely Private Key. The private key can be generated using CREATE-KEY 
+    - **KeyFile**: The file containing your endSafely Private Key. The private key can be generated using CREATE-KEY 
 
-    - KeyId: The unique KeyId associated with your SendSafely Private Key. A Private Key can be generated using CREATE-KEY 
+    - **KeyId**: The unique KeyId associated with your SendSafely Private Key. A Private Key can be generated using CREATE-KEY 
 
-    - PackageId: The Package Id to download files from. All files will be stored in a directory named with the PackageId.
+    - **PackageId**: The Package Id to download files from. All files will be stored in a directory named with the PackageId.
 
  
-Instructions for Use:
+Running the App
+---------------
 
-NOTE: You must run the sample app using an API Key and API Secret that belongs to the Dropzone Owner account. 
+*NOTE: You must run the sample app using an API Key and API Secret that belongs to the Dropzone Owner account.*
 
 1. Use the "Generate Key" option to generate a private PGP key. This key will be required to decrypt incoming files. By default the key will be saved to a file in the folder where you run the app (key_id.key).  
 
