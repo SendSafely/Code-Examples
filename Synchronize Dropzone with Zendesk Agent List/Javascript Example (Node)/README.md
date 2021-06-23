@@ -1,4 +1,4 @@
-# Instructions for running SendSafely Dropzone Sync to Zendesk Script #
+# Instructions for running Dropzone Sync to Zendesk Script #
 
 This script will synchronize a list of Dropzone recipients in SendSafely with your list of agents in Zendesk. This is useful for cases where you want to make sure that all of your Zendesk agents have access to files that are uploaded through a Dropzone and have access revoked when they are removed from Zendesk. 
 

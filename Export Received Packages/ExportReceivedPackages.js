@@ -43,7 +43,7 @@ if (myArgs.length < 3 || (myArgs[2].toLowerCase() != "getfiles" && myArgs[2].toL
         _sendSafely.verifyCredentials(function(email) {
             console.log("Connected to SendSafely as user " + email);
             getReceivedPackages().then(function(res) {
-                packages = res.packages;
+                packages = res;
                 console.log(packages.length + " packages were returned by the server");
                 if (!fs.existsSync(baseExportPath)) {
                     fs.mkdirSync(baseExportPath);
@@ -164,7 +164,24 @@ function generateKeyPair() {
 }
 
 function getReceivedPackages() {
-    return makeRequest("GET", "/api/v2.0/package/received/");
+    return new Promise((resolve, reject) => {
+        var items = [];
+        var offset = 0;
+        console.log("Getting received items...");
+        function getItems(offset) {
+            _sendSafely.getReceivedPackages(offset, function(results) {
+                items.push(...results.packages);
+                if (results.pagination.nextRowIndex) {
+                    console.log("Getting more items...");
+                    getItems(results.pagination.nextRowIndex);
+                } else {
+                    console.log("Done.");
+                    resolve(items);
+                }
+            });
+        }
+        getItems(offset);
+    });
 }
 
 function getPackageInfo(packageId) {
@@ -202,7 +219,7 @@ function makeRequest(method, path, messageData) {
             'ss-api-key': ssApiKey,
             'ss-request-timestamp': timestamp,
             'ss-request-signature': signature,
-            'ss-request-api': 'JS_API'
+            'ss-request-api': 'NODE_API'
         };
 
         var options = {
