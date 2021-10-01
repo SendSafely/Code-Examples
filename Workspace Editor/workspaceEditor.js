@@ -154,12 +154,13 @@ function uploadFiles() {
 
 function createWorkspace(done) {
     sendSafely.createWorkspace(function(packageId, serverSecret, packageCode, keyCode) {
+        var checksum = pbkdf2(keyCode, packageCode);
         sendSafely.updatePackage(packageId, {
-            label: argv.name
+            label: argv.name, checksum: checksum
         }, function() {
             console.log("\nNew Workspace Created. The following link must be used to access the workspace:");
-            workspaceLink = ssHost + "/receive/?packageCode=" + packageCode + "&thread=" + packageId + "#keycode=" + keyCode + "\n"
-            console.log(workspaceLink);
+            workspaceLink = ssHost + "/receive/?packageCode=" + packageCode + "&thread=" + packageId + "#keycode=" + keyCode;
+            console.log(workspaceLink + "\n");
             done();
         }, function() {
             console.log("ERROR");
@@ -467,4 +468,10 @@ function makeSSRequestSync(method, url, messageData) {
 function signMessage(messageString) {
     var hmacFunction = new sjcl.misc.hmac(sjcl.codec.utf8String.toBits(ssApiSecret), sjcl.hash.sha256); // Key, Hash
     return sjcl.codec.hex.fromBits(hmacFunction.encrypt(messageString));
+}
+
+function pbkdf2(key, salt) 
+{
+	var bitSalt = sjcl.codec.utf8String.toBits(salt);
+	return sjcl.codec.hex.fromBits(sjcl.misc.pbkdf2(sjcl.codec.utf8String.toBits(key), bitSalt, 1024, 256));
 }
