@@ -119,6 +119,9 @@ function sendsafelyThen(creds, method, path, body, rowIndex, pageSize) {
 	if (body === undefined) {
 		body = "";
 	}
+	if (body === "") {
+		body = '""';
+	}
 
 	let url = `${ssHost}${path}`
 	let timestamp = `${new Date().toISOString().substr(0, 19)}+0000`;

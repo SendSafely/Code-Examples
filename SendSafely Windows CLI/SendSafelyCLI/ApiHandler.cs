@@ -236,9 +236,11 @@ namespace SendSafelyCLI
         public static void EncryptAndUploadFile(String[] args)
         {
             verifyPackageLoaded();
-            validateArguments(args, 1);
+            //Disable call to validateArguments since it is not compatible with file names/paths that include a space 
+            //validateArguments(args, 1);
             PackageInformation info = packages[currentPackageId];
-            Console.WriteLine("Added File with ID " + api.EncryptAndUploadFile(info.PackageId, info.KeyCode, args[0], new ProgressCallback()).FileId);
+            //Join args to support file names/paths that include a space 
+            Console.WriteLine("Added File with ID " + api.EncryptAndUploadFile(info.PackageId, info.KeyCode, string.Join(" ", args).Replace("\"",""), new ProgressCallback()).FileId);
         }
         
         public static void DownloadPackageFiles(String[] args)

@@ -11,7 +11,7 @@ namespace SendSafelyCLI
             ApiHandler api = new ApiHandler();
 
             Console.WriteLine("-----------------------------------");
-            Console.WriteLine("| SendSafely CLI v1.1.0           |");
+            Console.WriteLine("| SendSafely CLI v1.1.1           |");
             Console.WriteLine("| support@sendsafely.com          |");
             Console.WriteLine("-----------------------------------");
             while (true)

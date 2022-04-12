@@ -2,7 +2,7 @@
 
 This java code will synchronize a list of Dropzone recipients in SendSafely with your list of agents in Zendesk. This is useful for cases where you want to make sure that all of your Zendesk agents have access to files that are uploaded through a Dropzone and have access revoked when they are removed from Zendesk.  
 
-Refer to our [Help Center article](https://sendsafely.zendesk.com/hc/en-us/articles/360016093811) for a complete walk through of the inteded use case for this code. 
+Refer to our [Help Center article](https://sendsafely.zendesk.com/hc/en-us/articles/360016093811) for a complete walk through of the intended use case for this code. 
 
 **Steps to run this example:**
 
