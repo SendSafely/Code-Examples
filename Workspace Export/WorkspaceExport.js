@@ -194,6 +194,9 @@ function sendsafelyThen(method, path, body, rowIndex, pageSize) {
 	if (body === undefined) {
 		body = '';
 	}
+	if (body === "") {
+		body = '""';
+	}
 
 	const url = `${host}${path}`;
 	const timestamp = new Date().toISOString().substr(0, 19) + '+0000';
