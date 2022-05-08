@@ -1,0 +1,36 @@
+<aura:component implements="flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes" access="global" >
+    <ltng:require styles="{!$Resource.bootstrap}" />
+    <ltng:require scripts="{!$Resource.sendsafely}" afterScriptsLoaded="{!c.initSendSafely}" />
+    <iframe name="hiddenFrame" width="0" height="0" border="0" style="display: none;"></iframe>
+    <form id="newCase" method="POST" target="hiddenFrame">
+        <input type="hidden" id="orgid" name="orgid"></input>
+        <div class="form-group">
+        	<label for="name">Name</label>
+            <input type="text" class="form-control" id="name" name="name"></input>
+      	</div>
+        
+        <div class="form-group">
+        	<label for="email">Email</label>
+            <input type="email" class="form-control" id="email" name="email"></input>
+      	</div>
+        
+        <div class="form-group">
+        	<label for="subject">Subject</label>
+            <input type="text" class="form-control" id="subject" name="subject"></input>
+      	</div>
+        
+        <div class="form-group">
+        	<label for="description">Description</label>
+			<textarea class="form-control" id="description" rows="5" name="description"></textarea>      	
+        </div>    
+        <input type="hidden"  id="external" name="external" value="1" ></input><br></br>
+		<div id="dropzone-replacement-div"></div>		
+        <div style="padding-top:10px" align="center">
+			<ui:button class="btn btn-success" press="{!c.finalizePackage}">Submit</ui:button>
+        </div>
+	</form>  
+    <div id="successMessage" style="padding-top:10px; display:none;" align="center">
+        <b>Thank you. A member of our team will reach out to you once we have reviewed your information.</b>           
+        <br></br>
+    </div>
+</aura:component>
