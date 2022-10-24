@@ -103,9 +103,9 @@ function buildFileIndex(directory, directoryPath) {
 	let {files, directoryId} = directory;
 	files.forEach((file) => {
 		const {fileName, fileId} = file;
-
-		filenames[fileId] = fileName;
-		fileIdToPath[fileId] = directoryPath;
+		const allowedPathNamesCrossPlatform = /[<>:"/\\|?*]/g;
+		filenames[fileId] = fileName.replace(allowedPathNamesCrossPlatform, "_");
+		fileIdToPath[fileId] = directoryPath.replace(allowedPathNamesCrossPlatform, "_");
 
 		sendSafely.downloadFileFromDirectory(packageid, directoryId, fileId, keycode);
 	});

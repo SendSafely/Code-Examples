@@ -20,11 +20,9 @@ var zdPassword = "PUT_YOUR_ZENDESK_PASSWORD_HERE";
 
 `npm install @sendsafely/sendsafely`
 
-`npm install window`
-
-`npm install jquery`
-
 `npm install sjcl`
+
+`npm install make-fetch-happen`
 
 **4)** Next, run the script using the following command:
 

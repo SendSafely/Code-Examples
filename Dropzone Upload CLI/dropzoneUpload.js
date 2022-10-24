@@ -90,7 +90,6 @@ ${safelyOrange('Dropzone ID:')} "${dropzoneId}"
 ${safelyOrange('Files paths provided: ')}${files}
 `);
 
-
 const CREATE_PACKAGE_FAILED = 'create.package.failed',
 	INVALID_FILE_EXTENSION = 'invalid.file.extension',
 	FILES_ATTACHED = 'sendsafely.files.attached',
@@ -110,7 +109,7 @@ const bars = new Map();
 const progressContainer = new cliProgress.MultiBar({
 	clearOnComplete: false,
 	hideCursor: true,
-	format: '{percentage}% [' + safelyOrange('{bar}') + '] : {label}',
+	format: '{value}% [' + safelyOrange('{bar}') + '] : {label}',
 	autopadding: true,
 }, cliProgress.Presets.shades_classic);
 
@@ -139,30 +138,20 @@ sendSafely.on(PROGRESS, updateFileProgressBar);
 sendSafely.createPackage((packageId, serverSecret, packageCode, keyCode) => {
 	for (const filePath of files) {
 		const absoluteFilePath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-		const fileBuffer = fs.readFileSync(absoluteFilePath);
-
-		const fileSingleton = [{
-			size: fileBuffer.length,
-			name: path.basename(absoluteFilePath),
-			data: fileBuffer,
-		}];
-
-		// Docs say packageId, but it's really packageCode...
-		sendSafely.encryptAndUploadFiles(packageCode, keyCode, serverSecret, fileSingleton, 'NODE_API',
+		sendSafely.encryptAndUploadFiles(packageCode, keyCode, serverSecret, [absoluteFilePath], 'NODE_API',
 			(packageId, fileId, fileSize, fileName) => {
 				bars.get(fileId).update(100, {label: `${fileName} ${chalkSuccess('(Done)')}`});
 				bars.get(fileId).stop();
 
-
 				// Once every bar is inactive (file finished uploading), finalize the package
 				if ([...bars.values()].every(bar => !bar.isActive)) {
 					progressContainer.stop();
-					
+
 					sendSafely.setUnconfirmedSender(email);
 					sendSafely.finalizePackage(packageId, packageCode, keyCode,
 						(url) => submitHostedDropzone(url, packageCode));
 				}
-			});
+		});
 	}
 });
 
@@ -248,5 +237,5 @@ function initializeFileProgressBar({fileId, name}) {
 }
 
 function updateFileProgressBar({fileId, percent}) {
-	bars.get(fileId).update(percent);
+	bars.get(fileId).update(parseFloat(percent.toFixed(2)));
 }
