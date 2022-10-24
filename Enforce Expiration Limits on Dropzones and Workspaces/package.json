@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "aws-sdk": "2.x",
+    "axios": "0.21.1",
+    "sjcl": "1.x"
+  }
+}

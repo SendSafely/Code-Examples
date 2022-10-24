@@ -9,7 +9,7 @@ Refer to our [Help Center article](https://sendsafely.zendesk.com/hc/en-us/artic
 1. Update ZendeskSyncDropzone.java with credentials for the Zendesk and SendSafely Users
 
 2. Recompile the code
-javac -d bin -cp lib/SendSafely.jar:lib/bcpg-jdk15on-151.jar:lib/bcprov-jdk15on-151.jar:lib/gson-2.3.jar:lib/zendesk-client.jar:lib/async-http-client-1.9.15.jar:lib/handy-uri-templates-1.1.7.jar:lib/jackson-annotations-2.1.4.jar:lib/jackson-core-2.1.4.jar:lib/jackson-databind-2.1.4.jar:lib/slf4j-api-1.7.2.jar:lib/slf4j-simple-1.7.2.jar src/ZendeskSyncDropzone.java
+javac -d bin -cp lib/SendSafely.jar:lib/bcpg-jdk15on-151.jar:lib/bcprov-jdk15on-151.jar:lib/gson-2.8.9.jar:lib/zendesk-client.jar:lib/async-http-client-1.9.15.jar:lib/handy-uri-templates-1.1.7.jar:lib/jackson-annotations-2.1.4.jar:lib/jackson-core-2.1.4.jar:lib/jackson-databind-2.1.4.jar:lib/slf4j-api-1.7.2.jar:lib/slf4j-simple-1.7.2.jar src/ZendeskSyncDropzone.java
 
 3. Run the app 
 java -cp lib/*:bin/ ZendeskSyncDropzone
