@@ -1,21 +1,18 @@
 {
   "name": "@sendsafely/workspace-export",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "SendSafely",
   "bugs": {
     "url": "https://github.com/SendSafely/Code-Examples/issues"
   },
-  "engines": {
-    "node": "^12.18.4"
-  },
   "homepage": "https://github.com/SendSafely/Code-Examples#readme",
   "dependencies": {
-    "@sendsafely/sendsafely": "^1.0.9",
-    "axios": "^0.21.1",
-    "chalk": "^4.1.0",
-    "cli-progress": "^3.8.2",
-    "progress-stream": "^2.0.0",
-    "sjcl": "^1.0.8",
-    "yargs": "^16.1.0"
+    "@sendsafely/sendsafely": "1.x",
+    "chalk": "4.x",
+    "cli-progress": "3.x",
+    "make-fetch-happen": "11.x",
+    "progress-stream": "2.x",
+    "sjcl": "1.x",
+    "yargs": "16.x"
   }
 }

@@ -1,6 +1,6 @@
 const {writeFileSync, existsSync, mkdirSync} = require('fs');
 const chalk = require('chalk');
-const axios = require('axios');
+const fetch = require('make-fetch-happen');
 const sjcl = require('sjcl');
 const cliProgress = require('cli-progress');
 const _path = require('path');
@@ -36,7 +36,7 @@ let currentFileProgress = undefined;
 const downloaded = [];
 
 sendSafely.on(`sendsafely.error`, (data) => {
-    console.log(data);
+	console.log(data);
 });
 
 sendSafely.verifyCredentials((email) => {
@@ -51,7 +51,7 @@ sendSafely.verifyCredentials((email) => {
 		if (out === undefined) {
 			let date = new Date(Date.now()).toISOString().replace(/:/g,'-');
 			//backupDir = _path.join('.', workspace, new Date(Date.now()).toISOString());
-            backupDir = _path.join('.', workspace, date);
+			backupDir = _path.join('.', workspace, date);
 		} else {
 			backupDir = out;
 		}
@@ -60,14 +60,13 @@ sendSafely.verifyCredentials((email) => {
 		console.log(`Exporting  "${chalk.bold(workspace)}" to "${chalk.bold(backupDir)}"`);
 		// console.log(`To: ${backupDir}`);
 
-		updateOverallProgressBar();
 		recurseDirectories(packageId, rootDirectoryId, backupDir);
-
 		// Write the file to disk once it's downloaded
 		sendSafely.on('save.file', (data) => {
 			const {fileId, file} = data;
 
 			let filename = filenames[fileId];
+
 			let path = fileIdToPath[fileId];
 
 			currentFileProgress.update(100, {
@@ -98,36 +97,37 @@ sendSafely.verifyCredentials((email) => {
 	});
 });
 
+function getSanitizedPathName(path) {	
+	const nonAllowedCharacters = /[<>:"/\\|?*]/g;	
+	return path.replace(nonAllowedCharacters, "_");	
+}
 
 function buildFileIndex(directory, directoryPath) {
 	let {files, directoryId} = directory;
 	files.forEach((file) => {
 		const {fileName, fileId} = file;
-		const allowedPathNamesCrossPlatform = /[<>:"/\\|?*]/g;
-		filenames[fileId] = fileName.replace(allowedPathNamesCrossPlatform, "_");
-		fileIdToPath[fileId] = directoryPath.replace(allowedPathNamesCrossPlatform, "_");
-
+		filenames[fileId] = getSanitizedPathName(fileName);
+		fileIdToPath[fileId] = directoryPath;
 		sendSafely.downloadFileFromDirectory(packageid, directoryId, fileId, keycode);
 	});
-
-	updateOverallProgressBar();
 }
 
-function recurseDirectories(packageId, directoryId, directoryPath) {
-	sendsafelyThen('GET',
+async function recurseDirectories(packageId, directoryId, directoryPath) {
+	const ssResponse = await sendsafelyThen('GET',
 		`/api/v2.0/package/${packageId}/directory/${directoryId}/`,
-		undefined)
-		.then((res) => {
-			let {subDirectories} = res.data;
+		undefined);
+	let {subDirectories} = ssResponse;
 
-			buildFileIndex(res.data, directoryPath);
+	buildFileIndex(ssResponse, directoryPath);
 
-			if (subDirectories !== undefined) {
-				subDirectories.forEach((nextDirectory) => {
-					recurseDirectories(packageId, nextDirectory.directoryId, _path.join(directoryPath, nextDirectory.name));
-				});
-			}
-		});
+	if (subDirectories !== undefined) {
+		let nextDirectory;
+		for(let i = 0; i < subDirectories.length; i += 1) {
+			nextDirectory = subDirectories[i];
+			let nextDirectoryName = getSanitizedPathName(nextDirectory.name.toString());
+			await recurseDirectories(packageId, nextDirectory.directoryId, _path.join(directoryPath, nextDirectoryName));
+		}
+	}
 }
 
 function updateOverallProgressBar(append) {
@@ -183,44 +183,41 @@ function printHelpExit() {
 	process.exit(1);
 }
 
-function sendsafelyThen(method, path, body, rowIndex, pageSize) {
-	const params = {};
-	if (rowIndex !== undefined) {
-		params.rowIndex = rowIndex;
-	}
-	if (pageSize !== undefined) {
-		params.pageSize = pageSize;
-	}
+async function sendsafelyThen(method, path, body) {
+
+	const fullURL = host + path;
+	let timestamp = new Date().toISOString().substr(0, 19) + "+0000"; //2014-01-14T22:24:00+0000;
+
 	if (body === undefined) {
 		body = '';
 	}
-	if (body === "") {
-		body = '""';
+
+	const data = apiKey + path + timestamp + body;
+	const signature = calculateSignature(data);
+
+	const headers = {
+		'ss-api-key': apiKey,
+		'ss-request-timestamp': timestamp,
+		'ss-request-signature': signature,
+	};
+
+	let options = {
+		headers,
+		method
+	};
+
+	if (body && "GET" !== method) {
+		options.body = body;
+		headers['content-type'] = 'application/json';
 	}
 
-	const url = `${host}${path}`;
-	const timestamp = new Date().toISOString().substr(0, 19) + '+0000';
-	const signature = calculateSignature(apiKey, apiSecret, path, body, timestamp);
-
-	return axios({
-		method: method,
-		url: url,
-		params: params,
-		headers: {
-			'ss-api-key': apiKey,
-			'ss-request-signature': signature,
-			'ss-request-timestamp': timestamp,
-			'Content-Type': 'application/json',
-		},
-		data: body,
-	});
+	return await fetch(fullURL, options)
+		.then((response) => response.json())
+		.then(data => data)
+		.catch(console.warn);
 }
 
-function calculateSignature(apiKey, apiSecret, path, body, timestamp) {
-	const data = apiKey + path + timestamp + body;
-
+function calculateSignature(data) {
 	const hmacFunction = new sjcl.misc.hmac(sjcl.codec.utf8String.toBits(apiSecret), sjcl.hash.sha256); // Key, Hash
 	return sjcl.codec.hex.fromBits(hmacFunction.encrypt(data));
 }
-
-
