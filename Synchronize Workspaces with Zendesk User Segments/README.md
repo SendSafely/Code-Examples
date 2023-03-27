@@ -21,6 +21,11 @@ var packageToTag = {
     "CCCC-3333": "product-3-tag"
 };
 ```
+You will need either the `packageID` or the `packageCode` of each Workspace, which you want to associate with a given Zendesk product tag. 
+
+These values (`packageID` or `packageCode`) will be set as the keys of the `packageToTag` object, and they both can be found in the Workspace root:
+- The `packageID` is found in the Workspace URL, where it has a format of eight alpha-numeric characters separated by a hyphen (“-”).
+- The `packageCode` is found in the Workspace link (at bottom of the screen). Copy all the characters from the “=” after `packageCode`, up to (but not including), the “#” before `keycode` in the URL.
 
 **3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following commands to install three required node modules (this command must be run from the same folder where the script is stored):
 

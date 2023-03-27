@@ -8,6 +8,7 @@ var zdAuthToken = "support@yourcompany.com/token:abc123efg456";
 
 var contactGroupId = "";
 
+// keys of packageToTag properties can be either packageID (in URL) or packageCode (in shareable link) of Workspace
 var packageToTag = {
     "AAAA-1111": "product-1-tag",
     "BBBB-2222": "product-2-tag",
