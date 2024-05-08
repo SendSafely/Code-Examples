@@ -8,10 +8,12 @@ namespace SendSafelyCLI
     {
         static void Main(string[] args)
         {
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            String version = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion;
             ApiHandler api = new ApiHandler();
 
             Console.WriteLine("-----------------------------------");
-            Console.WriteLine("| SendSafely CLI v1.1.1           |");
+            Console.WriteLine("| SendSafely CLI v" + version + "         |");
             Console.WriteLine("| support@sendsafely.com          |");
             Console.WriteLine("-----------------------------------");
             while (true)
