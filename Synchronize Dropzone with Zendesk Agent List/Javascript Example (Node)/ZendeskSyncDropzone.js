@@ -53,7 +53,7 @@
     }
 
     for (var i = 0; i < sendSafelyMembers.length; i++) {
-        if ($.inArray(sendSafelyMembers[i], zendeskMembers) == -1) {
+        if (zendeskMembers.indexOf(sendSafelyMembers[i]) === -1) {
             console.log("REMOVE " + sendSafelyMembers[i]);
             var result = await makeRequestToSendSafely("DELETE", "/api/v2.0/user/dropzone-recipients/", JSON.stringify({
                 "userEmail": sendSafelyMembers[i]
@@ -63,7 +63,7 @@
     }
 
     for (var i = 0; i < zendeskMembers.length; i++) {
-        if ($.inArray(zendeskMembers[i], sendSafelyMembers) == -1) {
+        if (sendSafelyMembers.indexOf(zendeskMembers[i]) === -1) {
             console.log("ADD " + zendeskMembers[i]);
             var result = await makeRequestToSendSafely("PUT", "/api/v2.0/user/dropzone-recipients/", JSON.stringify({
                 "userEmail": zendeskMembers[i]
