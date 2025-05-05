@@ -6,10 +6,15 @@ var ssApiSecret = "vwxyz67890";
 var zdHost = "https://yourcompany.zendesk.com";
 var zdAuthToken = "support@yourcompany.com/token:abc123efg456";
 
-var contactGroupId = "";
+// Contact group id for the contact group to be syned with Zendesk User Segment, for individual Workspaces.
+// For each Workspace, only ONE Workspace-associated Contact Group can be updated per script run.
+var workspaceIdToContactGroupId = {
+    "AAAA-1111": "contact-group-id-1",
+    "CCCC-3333": "contact-group-id-2",
+}
 
-// keys of packageToTag properties can be either packageID (in URL) or packageCode (in shareable link) of Workspace
-var packageToTag = {
+// keys of workspaceIdToZendeskTag object can be either packageID (in URL) or packageCode (in shareable link) of Workspace
+var workspaceIdToZendeskTag = {
     "AAAA-1111": "product-1-tag",
     "BBBB-2222": "product-2-tag",
     "CCCC-3333": "product-3-tag"
@@ -22,8 +27,8 @@ const sjcl = require("sjcl");
 
 try {
 
-    for (var key in packageToTag) {
-        //console.log("Package ID " + key + " will be assigned users with tag " + packageToTag[key]);
+    for (var key in workspaceIdToZendeskTag) {
+        //console.log("Package ID " + key + " will be assigned users with tag " + workspaceIdToZendeskTag[key]);
         var workspaceManagers = [];
         var zendeskMembers = [];
         var sendSafelyMembers = [];
@@ -31,7 +36,7 @@ try {
         var sendSafelyContactGroupMembers = [];
         var sendSafelyContactGroupMemberIds = [];
 
-        var nextPage = zdHost + "/api/v2/search/export.json?filter[type]=user&query=tags:" + packageToTag[key];
+        var nextPage = zdHost + "/api/v2/search/export.json?filter[type]=user&query=tags:" + workspaceIdToZendeskTag[key];
         while (nextPage != null) {
             var zdResponse = makeZendeskRequestSync("GET", nextPage);
             if (zdResponse.status == 401) {
@@ -58,7 +63,7 @@ try {
         }
 
         if (zendeskMembers.length == 0) {
-            console.log("Warning: No users found for Zendesk Tag " + packageToTag[key]);
+            console.log("Warning: No users found for Zendesk Tag " + workspaceIdToZendeskTag[key]);
         }
         if (zendeskMembers.length > 1000 && !contactGroupId) {
             console.log("Error: Too many users to add to the workspace. Please specify a contactGroupId");
@@ -83,8 +88,31 @@ try {
         if (zendeskMembers.length == 0) {
             console.log("Warning: No users found in Workspace " + key);
         }
+        
+        const contactGroupId = workspaceIdToContactGroupId[key] || null;
 
         if (contactGroupId) {
+            var enterpriseContactGroupsExists = false;
+            var enterpriseContactGroups = makeSSRequestSync("GET", '/api/v2.0/enterprise/groups/').getBody('utf8');
+            var enterpriseContactGroupsJson = JSON.parse(enterpriseContactGroups).contactGroups;
+            for (var i = 0; i < enterpriseContactGroupsJson.length; i++) {
+                if (enterpriseContactGroupsJson[i].contactGroupId == contactGroupId) {
+                   enterpriseContactGroupsExists = true;
+                    //console.log(groupsJson[i]);
+                    for (var j = 0; j < enterpriseContactGroupsJson[i].users.length; j++) {
+                        sendSafelyContactGroupMembers.push(enterpriseContactGroupsJson[i].users[j].userEmail.toLowerCase());
+                        sendSafelyContactGroupMemberIds.push(enterpriseContactGroupsJson[i].users[j].userId);
+                        console.log("Got SendSafely Enterprise Contact Group User: " + enterpriseContactGroupsJson[i].users[j].userEmail.toLowerCase());
+                    }
+                    break;
+                }
+            }
+            if (!enterpriseContactGroupsExists) {
+                console.log("Warning: Enterprise Contact Group " + contactGroupId + " does not exist. Looking into user contact groups.");
+            }
+
+            //look for user contact groups if enterprise contact group does not exist.
+            if(!enterpriseContactGroups){
             var groupExists = false;
             var groups = makeSSRequestSync("GET", "/api/v2.0/user/groups/").getBody('utf8');
             var groupsJson = JSON.parse(groups).contactGroups;
@@ -98,16 +126,16 @@ try {
                         console.log("Got SendSafely Contact Group User: " + groupsJson[i].users[j].userEmail.toLowerCase());
                     }
                     break;
+                    }
                 }
-            }
-            if (!groupExists) {
-                console.log("Error: Contact Group " + contactGroupId + " does not exist.");
-                process.exit(1);
+                if (!groupExists) {
+                    console.log("Error: Contact Group " + contactGroupId + " does not exist.");
+                    process.exit(1);
+                }
             }
         }
 
         if (contactGroupId) {
-
             //If contact groups are used, delete anyone from the group that is not in Zendesk 
             for (var i = 0; i < sendSafelyContactGroupMembers.length; i++) {
                 if (!zendeskMembers.includes(sendSafelyContactGroupMembers[i])) {
@@ -160,7 +188,6 @@ function makeZendeskRequestSync(method, url) {
     var res = requestSync(method, url, requestOptions);
     return res;
 }
-
 
 function makeSSRequestSync(method, url, messageData) {
 

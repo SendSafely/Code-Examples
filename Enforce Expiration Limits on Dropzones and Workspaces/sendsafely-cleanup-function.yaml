@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-lambda
+      Code:
+        S3Bucket: sendsafely
+        S3Key: lambda/sendsafely-cleanup-function.zip
+      Handler: index.handler
+      Runtime: nodejs16.x
+      Description: ''
+      MemorySize: 128
+      Timeout: 900
+      Role: !GetAtt IamRole.Arn
+      Environment:
+        Variables:
+          DRY_RUN: 'true'
+          MAX_FILE_AGE: '90'
+          MAX_PACKAGE_LIFE: '90'
+          SECRET_NAME: !Sub ${AWS::StackName}-secret
+
+  IamRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+
+  IamRolePolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+        - !Ref IamRole
+      PolicyName: !Sub ${AWS::StackName}-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: VisualEditor0
+            Effect: Allow
+            Action:
+              - 'secretsmanager:DescribeSecret'
+              - 'logs:CreateLogGroup'
+              - 'secretsmanager:ListSecretVersionIds'
+              - 'secretsmanager:GetResourcePolicy'
+              - 'secretsmanager:GetSecretValue'
+            Resource:
+              - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
+              - !Ref ConfigSecret
+              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+          - Sid: VisualEditor1
+            Effect: Allow
+            Action:
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${AWS::StackName}-lambda:*
+              - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
+
+  ConfigSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: !Sub ${AWS::StackName}-secret
+      SecretString: >-
+        {"ssHost":"https://www.sendsafely.com","ssApiKey":"AAABBBCCC","ssApiSecret":"DDDEEEFFF"}
+
+

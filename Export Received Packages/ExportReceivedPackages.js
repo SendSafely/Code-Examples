@@ -1,7 +1,6 @@
 const https = require('https');
 const URL = require('url').URL;
 const sjcl = require("sjcl");
-const crypto = require("crypto");
 const fs = require('fs');
 const SendSafely = require('@sendsafely/sendsafely');
 const rimraf = require("rimraf");

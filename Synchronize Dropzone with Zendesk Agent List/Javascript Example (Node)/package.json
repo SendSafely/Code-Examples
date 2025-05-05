@@ -1,0 +1,21 @@
+{
+  "name": "sync-dropzone-with-zendesk-agent-list",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node ZendeskSyncDropzone.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SendSafely/SendSafely-API-Examples.git"
+  },
+  "author": "SendSafely",
+  "bugs": {
+    "url": "https://github.com/SendSafely/SendSafely-API-Examples/issues"
+  },
+  "homepage": "https://github.com/SendSafely/SendSafely-API-Examples#readme",
+  "dependencies": {
+    "make-fetch-happen":"^13.x",
+    "sjcl": "^1.x",
+    "@sendsafely/sendsafely": "^1.x"
+  }
+}

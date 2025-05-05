@@ -15,13 +15,9 @@ In order to run the script, you will need to have Node.js installed. Here are in
 - **oktaApiToken**: Okta API Token for API Access (https://developer.okta.com/docs/guides/create-an-api-token/overview/)
 - **oktaGroupId**: Okta group id for the group you want to sync. This is a unique alphanumeric value visible in the Okta Admin portal URL when viewing the group (ie. /admin/group/{group id})
 
-**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following commands to install three required node modules (this command must be run from the same folder where the script is stored):
+**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following command to install three required node modules (this command must be run from the same folder where the script is stored):
 
-`npm install sync-request`
-
-`npm install request`
-
-`npm install sjcl`
+`npm install`
 
 **4)** Next, run the script using the following command:
 

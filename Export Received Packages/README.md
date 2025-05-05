@@ -9,19 +9,21 @@ In order to run the script, you will need to have Node.js installed. Here are in
 
 **1)** Visit https://nodejs.org/en/ and install the most recent version of Node.js.
 
-**2)** You will need to update the following variables at the top of the script:
+**2)** In the Terminal, navigate to the folder containing the script and run npm install.
+
+**3)** You will need to update the following variables at the top of the script:
 
 - ssHost: The URL that you use to access the SendSafely Portal 
 - ssApiKey: API Key belonging to the Dropzone Owner for the Dropzone you want to sync 
 - ssApiSecret: API Secret for the API Key included above 
 
-**3)** Generate a new key for the script to use (first time only)
+**4)** Generate a new key for the script to use (first time only)
 
 `node ./ExportReceivedPackages.js generateKey`
 
 After running this command, the script will create a file called XXXX.privatekey.txt where XXXX is the Key Id. You'll need to supply both the key id and the key file when running the script to export submissions. This should be a one-time step that is needed as part of the initial setup process. 
 
-**4)** Export Items
+**5)** Export Items
 
 `node ./ExportReceivedPackages.js getFiles ./XXXX.privatekey.txt XXXXX`
 

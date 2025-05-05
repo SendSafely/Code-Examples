@@ -1,0 +1,22 @@
+{
+  "name": "export-received-packages",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node ExportReceivedPackages.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SendSafely/SendSafely-API-Examples.git"
+  },
+  "author": "SendSafely",
+  "bugs": {
+    "url": "https://github.com/SendSafely/SendSafely-API-Examples/issues"
+  },
+  "homepage": "https://github.com/SendSafely/SendSafely-API-Examples#readme",
+  "dependencies": {
+    "@sendsafely/sendsafely": "^1.x",
+    "node-datetime": "^2.x",
+    "rimraf": "^6.x",
+    "sjcl": "^1.x"
+  }
+}
