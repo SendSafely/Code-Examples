@@ -4,6 +4,10 @@
 
 This script can be run from AWS Lambda (using NodeJS) or from the command line of any system with NodeJS installed.
 
+The script will expire packages on a USER-basis, for a given SendSafely USER API key and secret.
+
+To run this script against all dropzone and workspace packages in your **entire** SendSafely portal, you will need an **ADMIN**-level SendSafely API key and secret.
+
 ## Setup and run
 
 ### Command Line
@@ -12,7 +16,7 @@ Instructions to install NodeJS and run the script from the command line:
 
 2. Open a command line prompt using CMD on Windows or the Terminal program on MacOSX, and install the scripts dependencies: <br/>`npm install`
 
-3. Run the script with your SendSafely host, API key and API secret substituted for the placeholder values shown below.<br/> `node app.js  ssHost=XXXXXXX ssApiKey=XXXXXXX ssApiSecret=XXXXXXX`
+3. Run the script with your SendSafely host, API key and API secret substituted for the placeholder values shown below.<br/> `node index.js ssHost=XXXXXXX ssApiKey=XXXXXXX ssApiSecret=XXXXXXX`
 
 4. Pass in integer values (days) for `MaxDropzonePackageLife` or `MaxWorkspaceFileAge`, to override default of `90` days.
 

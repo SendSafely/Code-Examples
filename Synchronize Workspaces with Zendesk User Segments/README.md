@@ -27,11 +27,9 @@ These values (`packageID` or `packageCode`) will be set as the keys of the `pack
 - The `packageID` is found in the Workspace URL, where it has a format of eight alpha-numeric characters separated by a hyphen (“-”).
 - The `packageCode` is found in the Workspace link (at bottom of the screen). Copy all the characters from the “=” after `packageCode`, up to (but not including), the “#” before `keycode` in the URL.
 
-**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following commands to install three required node modules (this command must be run from the same folder where the script is stored):
+**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following commands to install the required node modules (this command must be run from the same folder where the script is stored):
 
-`npm install sync-request`
-
-`npm install sjcl`
+`npm install`
 
 **4)** Next, run the script using the following command:
 

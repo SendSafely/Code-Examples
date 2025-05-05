@@ -4,13 +4,13 @@
         var webToCaseURL = "https://webto.salesforce.com/servlet/servlet.WebToCase?encoding=UTF-8";
         var organizationId = "your_salesforce_organization_id_here"; //Example: 00D1N000003BrYX
 
-        var form = document.getElementById("newCase");
+        var form = component.find("newCase").getElement();
         form.setAttribute("action", webToCaseURL);
 
-        var orgInput = document.getElementById("orgid");
+        var orgInput = component.find("orgid").getElement();
         orgInput.value = organizationId;
 
-        var placeholderElement = document.getElementById("dropzone-replacement-div");
+        var placeholderElement = component.find("dropzone-replacement-div").getElement();
         //The formField variable is not required by SendSafely in this implementation because widget.disableAutoSubmit is set to true, however we are setting anyway to prevent a Lightning undefined error.
         var formField = document.createElement("div");
         formField.setAttribute("id", "hidden-secure-link-field");
@@ -35,11 +35,11 @@
                 var widget = SendSafelyDropzone.dropZone;
                 console.log("number of files: " + widget.nbrOfFilesAttached);
                 if (widget.nbrOfFilesAttached > 0) {
-                    widget.setUnconfirmedSender(document.getElementById("email").value);
+                    widget.setUnconfirmedSender(component.find("email").getElement().value);
                     widget.finalizePackage($A.getCallback(function (url) {
 
                         var secureLink = url;
-                        var description = document.getElementById("description").value += "\n\nSecure Link \n\n " + url;
+                        var description = component.find("description").getElement().value += "\n\nSecure Link \n\n " + url;
                         var action = component.get('c.createCase');
                         $A.enqueueAction(action);
                     }));
@@ -54,21 +54,21 @@
     },
 
     createCase: function (component, event, helper) {
-        document.getElementById("newCase").submit();
-        document.getElementById("newCase").style.display = "none";
-        document.getElementById("successMessage").style.display = "block";
+        component.find("newCase").getElement().submit();
+        component.find("newCase").getElement().style.display = "none";
+        component.find("successMessage").getElement().style.display = "block";
     },
     validateFields: function (component, event, helper, test) {
         var isValid = true;
-        if (!/(.+)@(.+){2,}\.(.+){2,}/.test(document.getElementById("email").value)) {
+        if (!/(.+)@(.+){2,}\.(.+){2,}/.test(component.find("email").getElement().value)) {
             alert("You did not provide a valid email address");
             isValid = false;
             return isValid;
         }
 
-        var nameValue = document.getElementById("name").value;
-        var subjectValue = document.getElementById("subject").value;
-        var descriptionValue = document.getElementById("description").value;
+        var nameValue = component.find("name").getElement().value;
+        var subjectValue = component.find("subject").getElement().value;
+        var descriptionValue = component.find("description").getElement().value;
 
         var validationFields = [nameValue, subjectValue, descriptionValue];
 

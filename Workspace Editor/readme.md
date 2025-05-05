@@ -23,15 +23,9 @@ In order to run the script, you will need to have Node.js installed. Here are in
 - ssApiKey: API Key belonging to the Dropzone Owner for the Dropzone you want to sync 
 - ssApiSecret: API Secret for the API Key included above 
 
-**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following commands to install three required node modules (this command must be run from the same folder where the script is stored):
+**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following command to install the required node modules (this command must be run from the same folder where the script is stored):
 
-`npm install @sendsafely/sendsafely`
-
-`npm install sync-request`
-
-`npm install sjcl`
-
-`npm install yargs`
+`npm install`
 
 **4)** Next, run the script using the following command (the usage syntax will be shown, which you can use to run specific tasks). 
 

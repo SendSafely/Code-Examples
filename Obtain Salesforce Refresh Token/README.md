@@ -28,7 +28,7 @@ npm install
 
 
 ```shell
-node dropzoneUpload.js
+node getRefreshToken.js
 ```
 
 **4)** Once the above inputs are provided, the script will produce a URL that you must copy/paste into your browser while authenticated to Salesforce. This URL will prompt you for permission to authorize the app to run. Once authorized, you will be redirected to a screen that says "Remote Access Application Authorization". In the URL you will see a value that says code=XXXX where XXXX is the Authorization Code. Please copy that value (excluding the code= portion of the value) and provide it to the script when prompted. 

@@ -16,13 +16,9 @@ var zdUsername = "PUT_YOUR_ZENDESK_USERNAME_HERE";
 var zdPassword = "PUT_YOUR_ZENDESK_PASSWORD_HERE";
 ```
 
-**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following commands to install three required node modules (this command must be run from the same folder where the script is stored):
+**3)** Save the edited script and open a command line window. Navigate to the folder where you downloaded the script and run the following commands to install the required node modules (this command must be run from the same folder where the script is stored):
 
-`npm install @sendsafely/sendsafely`
-
-`npm install sjcl`
-
-`npm install make-fetch-happen`
+`npm install`
 
 **4)** Next, run the script using the following command:
 
