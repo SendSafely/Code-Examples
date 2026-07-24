@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace SendSafelyCLI
@@ -8,8 +9,10 @@ namespace SendSafelyCLI
     {
         static void Main(string[] args)
         {
-            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
-            String version = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion;
+            // Assembly.Location is empty in a single-file publish, so read the version
+            // from assembly metadata instead of the file on disk.
+            String version = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ?? "unknown";
             ApiHandler api = new ApiHandler();
 
             Console.WriteLine("-----------------------------------");
