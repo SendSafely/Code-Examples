@@ -4,6 +4,8 @@ using System.Text;
 using SendSafely;
 using SendSafely.Exceptions;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Security;
 
 namespace SendSafelyCLI
 {
@@ -13,6 +15,7 @@ namespace SendSafelyCLI
         private static ClientAPI api;
         private static Dictionary<String, PackageInformation> packages;
         private static String currentPackageId;
+        private static bool debugMode = false;
 
         public ApiHandler()
         {
@@ -27,6 +30,7 @@ namespace SendSafelyCLI
             commands.Add(new ApiObject("GenerateLink", "", new Action<String[]>(ApiHandler.FinalizePackage)));
             commands.Add(new ApiObject("DeletePackage", "", new Action<String[]>(ApiHandler.DeletePackage)));
             commands.Add(new ApiObject("DownloadPackage", "Link SaveToPath", new Action<String[]>(ApiHandler.DownloadPackageFiles)));
+            commands.Add(new ApiObject("ToggleDebug", "", new Action<String[]>(ApiHandler.ToggleDebugMode)));
             
             api = new ClientAPI();
 
@@ -37,10 +41,11 @@ namespace SendSafelyCLI
         public String getAvailableCommands()
         {
             string desc = "";
-            int counter = 0;
-            foreach(ApiObject obj in commands)
+            // Skip index 0 (initialSetup is deprecated)
+            for (int counter = 1; counter < commands.Count; counter++)
             {
-                desc += "[" + counter++ + "]" + obj.name + " " + obj.description + "\n";
+                ApiObject obj = (ApiObject)commands[counter];
+                desc += "[" + counter + "]" + obj.name + " " + obj.description + "\n";
             }
             return desc;
         }
@@ -86,12 +91,30 @@ namespace SendSafelyCLI
 
         #region API Mappings
 
+        private static string GetCurrentTimestamp()
+        {
+            return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+        public static void ToggleDebugMode(String[] args)
+        {
+            debugMode = !debugMode;
+            Console.WriteLine("Debug mode is now " + (debugMode ? "enabled" : "disabled"));
+        }
         public static void InitialSetupWithCustomHost(String[] args)
         {
             validateArguments(args, 2);
             var newArgs = new List<String>(args);
             newArgs.RemoveAt(0);
-            InitialSetupWithHost("https://" + args[0], newArgs.ToArray());
+            string host = args[0];
+            if (host.StartsWith("http://"))
+            {
+                host = "https://" + host.Substring(7);
+            }
+            else if (!host.StartsWith("https://"))
+            {
+                host = "https://" + host;
+            }
+            InitialSetupWithHost(host, newArgs.ToArray());
         }
 
         public static void InitialSetup(String[] args)
@@ -240,7 +263,26 @@ namespace SendSafelyCLI
             //validateArguments(args, 1);
             PackageInformation info = packages[currentPackageId];
             //Join args to support file names/paths that include a space 
-            Console.WriteLine("Added File with ID " + api.EncryptAndUploadFile(info.PackageId, info.KeyCode, string.Join(" ", args).Replace("\"",""), new ProgressCallback()).FileId);
+            Stopwatch stopwatch = null;
+            string filePath = string.Join(" ", args).Replace("\"","");
+            if (debugMode)
+            {
+                stopwatch = new Stopwatch();
+                string startTime = GetCurrentTimestamp();
+                Console.WriteLine("[DEBUG] Starting file upload for: " + filePath);
+                Console.WriteLine("[DEBUG] Start time: " + startTime);
+                stopwatch.Start();
+            }
+            string fileId = api.EncryptAndUploadFile(info.PackageId, info.KeyCode, filePath, new ProgressCallback()).FileId;
+            if (debugMode && stopwatch != null)
+            {
+                stopwatch.Stop();
+                string endTime = GetCurrentTimestamp();
+                Console.WriteLine();
+                Console.WriteLine("[DEBUG] End time: " + endTime);
+                Console.WriteLine("[DEBUG] File upload completed in " + stopwatch.Elapsed.TotalSeconds.ToString("0.00") + " seconds");
+            }
+            Console.WriteLine("Added File with ID " + fileId);
         }
         
         public static void DownloadPackageFiles(String[] args)
@@ -311,7 +353,7 @@ namespace SendSafelyCLI
                             SendSafely.Objects.DirectoryResponse directory = rootDir.SubDirectories[itemNumber];
                             parentDirectoryIdTracker.Push(rootDir.DirectoryId);                       
                             rootDir = api.GetDirectory(info.PackageId, directory.DirectoryId);
-                            nestedFolderTracker.Push(rootDir.DirectoryName);
+                            nestedFolderTracker.Push(SanitizePathComponent(rootDir.DirectoryName));
                             Console.WriteLine("Viewing directory (" + rootDir.DirectoryName +")");
                         }
                     } else if(itemNumber > (rootDir.SubDirectories.Count -1) && itemNumber <= ((rootDir.SubDirectories.Count-1) + (rootDir.Files.Count)))
@@ -321,8 +363,7 @@ namespace SendSafelyCLI
                         Console.WriteLine(file.FileName);
 
                         string fullPath = createFolderIfDoesNotExists(saveToPath, nestedFolderTracker);
-                        fullPath = System.IO.Path.Combine(fullPath, file.FileName);
-                        
+                        fullPath = CombinePathSafe(fullPath, file.FileName, saveToPath);
 
                         if (System.IO.File.Exists(fullPath))
                         {
@@ -332,7 +373,7 @@ namespace SendSafelyCLI
                                 string overwrite = Console.ReadLine();
                                 if (overwrite.ToUpper().Equals("Y"))
                                 {
-                                    downloadFileFromDirectory(fullPath, file.FileName, 0, 0, info.PackageId, rootDir.DirectoryId, file.FileId, info.KeyCode, true);
+                                    downloadFileFromDirectory(fullPath, file.FileName, 0, 0, info.PackageId, rootDir.DirectoryId, file.FileId, info.KeyCode, true, saveToPath);
                                     break;
                                 }
                                 else if (overwrite.ToUpper().Equals("N"))
@@ -344,13 +385,13 @@ namespace SendSafelyCLI
                                 {
                                     Console.WriteLine("The file: " + file.FileName + " already exist. Do you want to overwrite it? Y/N");
                                     overwrite = Console.ReadLine();
-                                    continue; 
+                                    continue;
                                 }
                             }
                         }
                         else
                         {
-                            downloadFileFromDirectory(fullPath, file.FileName, 0, 0, info.PackageId, rootDir.DirectoryId, file.FileId, info.KeyCode, false);
+                            downloadFileFromDirectory(fullPath, file.FileName, 0, 0, info.PackageId, rootDir.DirectoryId, file.FileId, info.KeyCode, false, saveToPath);
                         }
                     } else if(item.ToUpper().Equals("ALL"))
                     {
@@ -364,7 +405,7 @@ namespace SendSafelyCLI
                             foreach (SendSafely.Objects.FileResponse file in rootDir.Files)
                             {
                                 downloadCount++;
-                                string filePath = System.IO.Path.Combine(fullPath, file.FileName);
+                                string filePath = CombinePathSafe(fullPath, file.FileName, saveToPath);
                                 Console.WriteLine(filePath);
                                 if (System.IO.File.Exists(filePath) && !overrideAll)
                                 {
@@ -374,7 +415,7 @@ namespace SendSafelyCLI
                                         string overwrite = Console.ReadLine();
                                         if (overwrite.ToUpper().Equals("Y") || overwrite.ToUpper().Equals("O"))
                                         {
-                                            downloadFileFromDirectory(filePath, file.FileName, downloadCount, totalFilesCount, info.PackageId, rootDir.DirectoryId, file.FileId, info.KeyCode, true);
+                                            downloadFileFromDirectory(filePath, file.FileName, downloadCount, totalFilesCount, info.PackageId, rootDir.DirectoryId, file.FileId, info.KeyCode, true, saveToPath);
 
                                             if (overwrite.ToUpper().Equals("O"))
                                             {
@@ -398,7 +439,7 @@ namespace SendSafelyCLI
                                 }
                                 else
                                 {
-                                    downloadFileFromDirectory(filePath, file.FileName, downloadCount, totalFilesCount, info.PackageId, rootDir.DirectoryId, file.FileId, info.KeyCode, overrideAll);  
+                                    downloadFileFromDirectory(filePath, file.FileName, downloadCount, totalFilesCount, info.PackageId, rootDir.DirectoryId, file.FileId, info.KeyCode, overrideAll, saveToPath);
                                 }
                             }
                         }
@@ -418,7 +459,7 @@ namespace SendSafelyCLI
                 foreach (File file in info.Files)
                 {
 
-                    string fullpath = System.IO.Path.Combine(saveToPath, file.FileName);
+                    string fullpath = CombinePathSafe(saveToPath, file.FileName, saveToPath);
 
                     if (System.IO.File.Exists(fullpath))
                     {
@@ -430,7 +471,24 @@ namespace SendSafelyCLI
                             {
                                 System.IO.File.Delete(fullpath);
                                 Console.WriteLine("Downloading file " + file.FileName);
+                                Stopwatch stopwatch = null;
+                                if (debugMode)
+                                {
+                                    stopwatch = new Stopwatch();
+                                    string startTime = GetCurrentTimestamp();
+                                    Console.WriteLine("[DEBUG] Starting file download for: " + file.FileName);
+                                    Console.WriteLine("[DEBUG] Start time: " + startTime);
+                                    stopwatch.Start();
+                                }
                                 System.IO.FileInfo newFile = api.DownloadFile(info.PackageId, file.FileId, info.KeyCode, new DownloadProgressCallback());
+                                if (debugMode && stopwatch != null)
+                                {
+                                    stopwatch.Stop();
+                                    string endTime = GetCurrentTimestamp();
+                                    Console.WriteLine();
+                                    Console.WriteLine("[DEBUG] End time: " + endTime);
+                                    Console.WriteLine("[DEBUG] File download completed in " + stopwatch.Elapsed.TotalSeconds.ToString("0.00") + " seconds");
+                                }
                                 System.IO.File.Move(newFile.FullName, fullpath);
                                 Console.WriteLine();
                                 Console.WriteLine("Download complete, file saved to " + fullpath);
@@ -452,7 +510,24 @@ namespace SendSafelyCLI
                     else
                     {
                         Console.WriteLine("Downloading file " + file.FileName);
+                        Stopwatch stopwatch = null;
+                        if (debugMode)
+                        {
+                            stopwatch = new Stopwatch();
+                            string startTime = GetCurrentTimestamp();
+                            Console.WriteLine("[DEBUG] Starting file download for: " + file.FileName);
+                            Console.WriteLine("[DEBUG] Start time: " + startTime);
+                            stopwatch.Start();
+                        }
                         System.IO.FileInfo newFile = api.DownloadFile(info.PackageId, file.FileId, info.KeyCode, new DownloadProgressCallback());
+                        if (debugMode && stopwatch != null)
+                        {
+                            stopwatch.Stop();
+                            string endTime = GetCurrentTimestamp();
+                            Console.WriteLine();
+                            Console.WriteLine("[DEBUG] End time: " + endTime);
+                            Console.WriteLine("[DEBUG] File download completed in " + stopwatch.Elapsed.TotalSeconds.ToString("0.00") + " seconds");
+                        }
                         System.IO.File.Move(newFile.FullName, fullpath);
                         Console.WriteLine();
                         Console.WriteLine("Download complete, file saved to " + fullpath);
@@ -530,6 +605,41 @@ namespace SendSafelyCLI
             return false;
         }
 
+        private static string CombinePathSafe(string basePath, string fileName, string containmentRoot)
+        {
+            string combined = System.IO.Path.Combine(basePath, SanitizePathComponent(fileName));
+            ValidatePathContainment(combined, containmentRoot);
+            return combined;
+        }
+        
+        private static string SanitizePathComponent(string name)
+        {
+            string sanitized = System.IO.Path.GetFileName(name);
+
+            if (string.IsNullOrWhiteSpace(sanitized) || sanitized == "." || sanitized == "..")
+            {
+                throw new ArgumentException("Invalid file or directory name received from server: " + name);
+            }
+
+            return sanitized;
+        }
+
+        private static void ValidatePathContainment(string candidatePath, string basePath)
+        {
+            string fullCandidate = System.IO.Path.GetFullPath(candidatePath);
+            string fullBase = System.IO.Path.GetFullPath(basePath);
+
+            if (!fullBase.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+            {
+                fullBase += System.IO.Path.DirectorySeparatorChar;
+            }
+
+            if (!fullCandidate.StartsWith(fullBase, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new SecurityException("Security error: resolved path '" + fullCandidate + "' escapes the download directory '" + fullBase + "'.");
+            }
+        }
+
         private static string createFolderIfDoesNotExists(string saveToPath, Stack<string> nestedFolderTracker)
         {
             string fullPath = saveToPath;
@@ -541,6 +651,8 @@ namespace SendSafelyCLI
                 fullPath = System.IO.Path.Combine(nestedFolderArray);
                 fullPath = System.IO.Path.Combine(saveToPath, fullPath);
 
+                ValidatePathContainment(fullPath, saveToPath);
+
                 if (!System.IO.Directory.Exists(fullPath))
                 {
                     System.IO.Directory.CreateDirectory(fullPath);
@@ -549,8 +661,9 @@ namespace SendSafelyCLI
             return fullPath;
         }
 
-        private static void downloadFileFromDirectory(string filePath, string fileName, int downloadCount, int totalFilesCount, string packageId, string directoryId, string fileId, string keyCode, bool overrideAll)
+        private static void downloadFileFromDirectory(string filePath, string fileName, int downloadCount, int totalFilesCount, string packageId, string directoryId, string fileId, string keyCode, bool overrideAll, string saveToPath)
         {
+            ValidatePathContainment(filePath, saveToPath);
             if (overrideAll)
             {
                 System.IO.File.Delete(filePath);
@@ -563,7 +676,24 @@ namespace SendSafelyCLI
             }
 
             Console.WriteLine(fileDownloadMessage);
+            Stopwatch stopwatch = null;
+            if (debugMode)
+            {
+                stopwatch = new Stopwatch();
+                string startTime = GetCurrentTimestamp();
+                Console.WriteLine("[DEBUG] Starting file download for: " + fileName);
+                Console.WriteLine("[DEBUG] Start time: " + startTime);
+                stopwatch.Start();
+            }
             System.IO.FileInfo newFile = api.DownloadFileFromDirectory(packageId, directoryId, fileId, keyCode, new DownloadProgressCallback());
+            if (debugMode && stopwatch != null)
+            {
+                stopwatch.Stop();
+                string endTime = GetCurrentTimestamp();
+                Console.WriteLine();
+                Console.WriteLine("[DEBUG] End time: " + endTime);
+                Console.WriteLine("[DEBUG] File download completed in " + stopwatch.Elapsed.TotalSeconds.ToString("0.00") + " seconds");
+            }
             System.IO.File.Move(newFile.FullName, filePath);
             Console.WriteLine();
             Console.WriteLine("Download complete, file saved to " + filePath);
