@@ -3,7 +3,7 @@ setlocal
 pushd "%~dp0"
 
 rem Zips the publish output as SendSafely_Windows_CLI_v<FileVersion>.zip (version read from the csproj).
-rem Run build_cli.bat and sign_cli.bat first.
+rem Run build_cli.bat first.
 
 set "PUBLISH_DIR=SendSafelyCLI\bin\publish"
 set "EXE=%PUBLISH_DIR%\SendSafely CLI.exe"
@@ -21,7 +21,7 @@ if not defined VERSION (
     exit /b 1
 )
 
-powershell -NoProfile -Command "$s = Get-AuthenticodeSignature '%EXE%'; if ($s.Status -ne 'Valid') { Write-Host 'WARNING: EXE is unsigned or signature is invalid. Run sign_cli.bat before packaging a release.' }"
+powershell -NoProfile -Command "$s = Get-AuthenticodeSignature '%EXE%'; if ($s.Status -ne 'Valid') { Write-Host 'WARNING: EXE is unsigned or signature is invalid.' }"
 
 if not exist dist mkdir dist
 set "ZIP=dist\SendSafely_Windows_CLI_v%VERSION%.zip"
