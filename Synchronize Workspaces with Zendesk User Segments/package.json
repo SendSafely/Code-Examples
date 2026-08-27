@@ -1,6 +1,7 @@
 {
   "name": "sync-guide-to-workspaces",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "versionComments": "feat(auth): migrate zendesk sync script to oauth client credentials; refactor(deps): replace sjcl with Node built-in",
   "scripts": {
     "start": "node SyncGuideToWorkspaces.js"
   },
@@ -12,9 +13,5 @@
   "bugs": {
     "url": "https://github.com/SendSafely/SendSafely-API-Examples/issues"
   },
-  "homepage": "https://github.com/SendSafely/SendSafely-API-Examples#readme",
-  "dependencies": {
-    "sjcl": "^1.x",
-    "sync-request": "^6.x"
-  }
+  "homepage": "https://github.com/SendSafely/SendSafely-API-Examples#readme"
 }

@@ -1,6 +1,16 @@
 {
+  "name": "sendsafely-salesforce-refresh-token",
+  "version": "2.0.0",
+  "description": "CLI tool to obtain a Salesforce OAuth2 refresh token using PKCE",
+  "main": "getRefreshToken.js",
+  "scripts": {
+    "start": "node getRefreshToken.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT",
   "dependencies": {
-    "inquirer": "8.x",
-    "salesforce-oauth2": "0.2.x"
+    "inquirer": "8.2.7"
   }
 }
