@@ -1,0 +1,16 @@
+{
+  "name": "@sendsafely/contactgroup-oktasync",
+  "version": "1.0.0",
+  "author": "SendSafely",
+  "bugs": {
+    "url": "https://github.com/SendSafely/Code-Examples/issues"
+  },
+  "engines": {
+    "node": "^12.18.4"
+  },
+  "homepage": "https://github.com/SendSafely/Code-Examples#readme",
+  "dependencies": {
+    "make-fetch-happen": "^11.0.1",
+    "sjcl": "^1.0.8"
+  }
+}

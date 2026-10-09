@@ -1,71 +1,114 @@
 (async function(){
-    var SendSafely = require('@sendsafely/sendsafely');
-    const sjcl = require("sjcl");
-    const MakeFetch = require("make-fetch-happen");
+    const crypto = require('node:crypto');
+    const SendSafely = require('@sendsafely/sendsafely');
 
     var ssHost = "https://company_name.sendsafely.com";
     var zdHost = "https://company_name.zendesk.com";
     var ssApiKey = "PUT_YOUR_SENDSAFELY_API_KEY_HERE";
     var ssApiSecret = "PUT_YOUR_SENDSAFELY_API_SECRET_HERE";
-    var zdUsername = "PUT_YOUR_ZENDESK_USERNAME_HERE";
-    var zdPassword = "PUT_YOUR_ZENDESK_PASSWORD_HERE";
+
+    const zdClientId = "PUT_YOUR_ZENDESK_OAUTH_CLIENT_ID_HERE";
+    const zdClientSecret = "PUT_YOUR_ZENDESK_OAUTH_CLIENT_SECRET_HERE";
+    const zdScope = "read write";
+
+
+    let zdOauthToken;
+    try {
+        console.log("Requesting temporary Zendesk OAuth token via Client Credentials...");
+        const tokenResponse = await fetch(`${zdHost}/oauth/tokens`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                grant_type: "client_credentials",
+                client_id: zdClientId,
+                client_secret: zdClientSecret,
+                scope: zdScope
+            })
+        });
+
+        if (!tokenResponse.ok) {
+            const errorDetails = await tokenResponse.text();
+            throw new Error(`Zendesk token API returned status ${tokenResponse.status}: ${errorDetails}`);
+        }
+
+        const tokenData = await tokenResponse.json();
+        zdOauthToken = tokenData.access_token;
+        console.log("Successfully retrieved temporary OAuth token.");
+    } catch (e) {
+        console.error("Fatal Error: Could not authenticate with Zendesk.", e.message);
+        return;
+    }
+
     const zdRequestHeaders =  {
-        Authorization: "Basic " + Buffer.from(`${zdUsername}:${zdPassword}`).toString('base64')
+        Authorization: `Bearer ${zdOauthToken}`
     };
 
-    var sendSafely = new SendSafely(ssHost, ssApiKey, ssApiSecret);
-    var zendeskMembers = [];
-    var sendSafelyMembers = [];
-    var sendSafelyMemberIds = [];
-    var ssGroupId;
+    const sendSafely = new SendSafely(ssHost, ssApiKey, ssApiSecret);
+    const zendeskMembers = [];
+    const sendSafelyMembers = [];
+
+    const updateZendeskListOfMembers = async (zendeskMembers, zdRequest) => {
+        let matches = zdRequest && zdRequest.users;
+        if (matches) {
+            let userEmail;
+            for (let i = 0; i < matches.length; i++) {
+                userEmail = matches[i]?.email;
+                if(!userEmail) {
+                    console.log(`No email for this Zendesk User '${matches[i]?.name}'. Not adding to Zendesk Members list.`);
+                }
+                if (userEmail && !zendeskMembers.includes(userEmail)) {
+                    zendeskMembers.push(userEmail.toLowerCase().trim());
+                    console.log("Got Zendesk User: " + userEmail.toLowerCase());
+                } else {
+                    console.log(`Zendesk User '${matches[i]?.email}' already present in Zendesk Members list.`);
+                }
+            }
+        }
+        let morePagesUrl = zdRequest?.next_page || (zdRequest?.meta?.has_more ?  zdRequest?.links?.next : null);
+        while(morePagesUrl) {
+            let zdRequest = await fetch(morePagesUrl, { headers: zdRequestHeaders}).then(r => r.json());
+            morePagesUrl = zdRequest?.next_page || (zdRequest?.meta?.has_more ?  zdRequest?.links?.next : null);
+            await updateZendeskListOfMembers(zendeskMembers, zdRequest);
+        }
+        return zendeskMembers;
+    };
 
     sendSafely.on('sendsafely.error', function(error, errorMsg) {
         console.log(error)
     });
 
     let zdURLToRequest = zdHost + "/api/v2/users.json?role=agent";
-    let zdRequest = await MakeFetch(zdURLToRequest, { headers: zdRequestHeaders}).then(r => r.json());
-    let matches = zdRequest && zdRequest.users;
+    let zdRequest = await fetch(zdURLToRequest, { headers: zdRequestHeaders}).then(r => r.json());
 
-    if (matches) {
-        for (var i = 0; i < matches.length; i++) {
-            zendeskMembers.push(matches[i].email.toLowerCase());
-            console.log("Got Zendesk User: " + matches[i].email.toLowerCase());
-        }
-
-    }
+    await updateZendeskListOfMembers(zendeskMembers, zdRequest);
 
     zdURLToRequest = zdHost + "/api/v2/users.json?role=admin";
-    zdRequest = await MakeFetch(zdURLToRequest, { headers: zdRequestHeaders }).then(r => r.json());
-    matches = zdRequest && zdRequest.users;
+    zdRequest = await fetch(zdURLToRequest, { headers: zdRequestHeaders }).then(r => r.json());
 
-    for (var i = 0; i < matches.length; i++) {
-        zendeskMembers.push(matches[i].email.toLowerCase());
-        console.log("Got Zendesk User: " + matches[i].email.toLowerCase());
-    }
+    await updateZendeskListOfMembers(zendeskMembers, zdRequest);
 
-    var groups = await makeRequestToSendSafely("GET", "/api/v2.0/user/dropzone-recipients/");
-    var members = groups.recipientEmailAddresses;
+    const groups = await makeRequestToSendSafely("GET", "/api/v2.0/user/dropzone-recipients/");
+    const members = groups.recipientEmailAddresses;
 
-    for (var j = 0; j < members.length; j++) {
-        sendSafelyMembers.push(members[j].toLowerCase());
+    for (let j = 0; j < members.length; j++) {
+        sendSafelyMembers.push(members[j].toLowerCase().trim());
         console.log("Got SendSafely User: " + members[j].toLowerCase());
     }
 
-    for (var i = 0; i < sendSafelyMembers.length; i++) {
+    for (let i = 0; i < sendSafelyMembers.length; i++) {
         if (zendeskMembers.indexOf(sendSafelyMembers[i]) === -1) {
             console.log("REMOVE " + sendSafelyMembers[i]);
-            var result = await makeRequestToSendSafely("DELETE", "/api/v2.0/user/dropzone-recipients/", JSON.stringify({
+            const result = await makeRequestToSendSafely("DELETE", "/api/v2.0/user/dropzone-recipients/", JSON.stringify({
                 "userEmail": sendSafelyMembers[i]
             }));
             console.log(result);
         }
     }
 
-    for (var i = 0; i < zendeskMembers.length; i++) {
+    for (let i = 0; i < zendeskMembers.length; i++) {
         if (sendSafelyMembers.indexOf(zendeskMembers[i]) === -1) {
             console.log("ADD " + zendeskMembers[i]);
-            var result = await makeRequestToSendSafely("PUT", "/api/v2.0/user/dropzone-recipients/", JSON.stringify({
+            const result = await makeRequestToSendSafely("PUT", "/api/v2.0/user/dropzone-recipients/", JSON.stringify({
                 "userEmail": zendeskMembers[i]
             }));
             console.log(result);
@@ -73,38 +116,46 @@
     }
 
     async function makeRequestToSendSafely(method, url, messageData) {
+        const timestamp = new Date().toISOString().substr(0, 19) + "+0000";
 
-        var timestamp = new Date().toISOString().substr(0, 19) + "+0000"; //2014-01-14T22:24:00+0000;
-
-        var messageString = ssApiKey + url + timestamp;
-        if (messageData != "" && messageData != null) {
-            messageString += messageData;
+        let body = messageData;
+        if (body !== undefined && body !== null && typeof body !== 'string') {
+            body = JSON.stringify(body);
         }
-        var signature = signMessage(messageString);
+        if (body === undefined || body === null) {
+            body = '';
+        }
+
+        const messageString = ssApiKey + url + timestamp + body;
+        const signature = signMessage(messageString);
+
         const headers = {
             'ss-api-key': ssApiKey,
             'ss-request-timestamp': timestamp,
             'ss-request-signature': signature,
+            'ss-request-api': 'REST_API'
         };
 
-        let options = {
+        const options = {
             headers,
             method
         };
 
-        if(messageData && "GET" !== method) {
-            options.body = messageData;
+        if (body && method !== 'GET') {
+            options.body = body;
             headers['content-type'] = 'application/json';
         }
 
-        return await MakeFetch(ssHost + url, options)
+        return await fetch(ssHost + url, options)
             .then((response) => response.json())
             .then(data => data)
             .catch(console.warn);
     }
 
     function signMessage(messageString) {
-        var hmacFunction = new sjcl.misc.hmac(sjcl.codec.utf8String.toBits(ssApiSecret), sjcl.hash.sha256); // Key, Hash
-        return sjcl.codec.hex.fromBits(hmacFunction.encrypt(messageString));
+        return crypto
+            .createHmac('sha256', ssApiSecret)
+            .update(messageString)
+            .digest('hex');
     }
 }());

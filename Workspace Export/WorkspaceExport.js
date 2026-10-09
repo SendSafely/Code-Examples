@@ -1,13 +1,19 @@
-const {writeFileSync, existsSync, mkdirSync} = require('fs');
+const {writeFileSync, existsSync, mkdirSync, realpathSync} = require('fs');
 const chalk = require('chalk');
-const fetch = require('make-fetch-happen');
-const sjcl = require('sjcl');
 const cliProgress = require('cli-progress');
 const _path = require('path');
-const {argv} = require('yargs');
+const yargs = require('yargs');
+const { hideBin } = require('yargs/helpers');
 const SendSafely = require('@sendsafely/sendsafely'); // for distribution
 
-const {apiKey, apiSecret, secureLink, out,} = argv;
+const crypto = require('crypto'); // Add to top of file
+
+const argv = yargs(hideBin(process.argv)).argv;
+const {secureLink, out,} = argv;
+
+const apiKey = process.env.SENDSAFELY_API_KEY || argv.apiKey;
+const apiSecret = process.env.SENDSAFELY_API_SECRET || argv.apiSecret;
+
 const fileIdToPath = {};
 // should be indexed by fileId and have progressbar, filename and directoryPath as attributes
 const filenames = {};
@@ -19,7 +25,17 @@ if (!apiKey || !apiSecret || !secureLink || !secureLink.split('/receive/')[0]) {
 	printHelpExit();
 }
 
+if (!secureLink || !secureLink.startsWith('https://')) {
+	console.error(chalk.red("Security Error: The secureLink must use a secure HTTPS protocol."));
+	process.exit(1);
+}
+
 let host = secureLink.split('/receive/')[0];
+
+const url = new URL(host);
+if (url.protocol !== "https:") {
+	throw new Error("Host must use HTTPS.");
+}
 
 const sendSafely = new SendSafely(host, apiKey, apiSecret);
 
@@ -40,7 +56,9 @@ sendSafely.on(`sendsafely.error`, (data) => {
 });
 
 sendSafely.verifyCredentials((email) => {
-	console.log(`Connected to SendSafely as ${chalk.bold(email)} on ${chalk.bold(host.split('//')[1])}`);
+
+	const runningHost = new URL(host).hostname;
+	console.log(`Connected to SendSafely as ${chalk.bold(email)} on ${chalk.bold(runningHost)}`);
 
 	sendSafely.packageInformationFromLink(secureLink, (packageInformation) => {
 		const {files, directories, label: workspace, rootDirectoryId, packageId, keyCode} = packageInformation;
@@ -50,10 +68,10 @@ sendSafely.verifyCredentials((email) => {
 		let backupDir;
 		if (out === undefined) {
 			let date = new Date(Date.now()).toISOString().replace(/:/g,'-');
-			//backupDir = _path.join('.', workspace, new Date(Date.now()).toISOString());
-			backupDir = _path.join('.', workspace, date);
+			let sanitizedWorkspace = getSanitizedPathName(workspace);
+			backupDir = _path.resolve('.', sanitizedWorkspace, date); // Use _path.resolve to anchor it absolutely
 		} else {
-			backupDir = out;
+			backupDir = _path.resolve(out);
 		}
 
 		// console.log(`Now downloading all files`);
@@ -62,20 +80,34 @@ sendSafely.verifyCredentials((email) => {
 
 		recurseDirectories(packageId, rootDirectoryId, backupDir);
 		// Write the file to disk once it's downloaded
+
 		sendSafely.on('save.file', (data) => {
 			const {fileId, file} = data;
-
 			let filename = filenames[fileId];
-
 			let path = fileIdToPath[fileId];
+			const dirCheck = isPathSafe(backupDir, path);
+			if (!dirCheck.safe) {
+				abortOnTraversal('directory', path, dirCheck.resolved);
+			}
+
+			if (containsTraversalSegment(filename)) {
+				abortOnTraversal('filename', filename, null);
+			}
+
+			const fileCheck = isPathSafe(backupDir, _path.join(path, filename));
+			if (!fileCheck.safe) {
+				abortOnTraversal('resolved file path', filename, fileCheck.resolved);
+			}
+
+			const absoluteTargetDir = _path.resolve(path);
+			const absoluteTargetFile = fileCheck.resolved;
 
 			currentFileProgress.update(100, {
 				label: `${filenames[fileId]} (Saving to disk)`
 			});
 
-
-			mkdirIfNotExists(path);
-			writeFileSync(`${path}/${filename}`, file);
+			mkdirIfNotExists(absoluteTargetDir);
+			writeFileSync(absoluteTargetFile, file);
 
 			downloaded.push(fileId);
 			updateOverallProgressBar();
@@ -97,9 +129,50 @@ sendSafely.verifyCredentials((email) => {
 	});
 });
 
-function getSanitizedPathName(path) {	
-	const nonAllowedCharacters = /[<>:"/\\|?*]/g;	
-	return path.replace(nonAllowedCharacters, "_");	
+function isPathSafe(base, target) {
+	const absoluteBase = _path.resolve(base) + _path.sep;
+	const resolved = _path.resolve(base, target);
+	const lexicallySafe = resolved === _path.resolve(base) || (resolved + _path.sep).startsWith(absoluteBase);
+	if (!lexicallySafe) {
+		return {safe: false, resolved};
+	}
+
+	const realBase = realpathNearestExisting(_path.resolve(base));
+	const realParent = realpathNearestExisting(_path.dirname(resolved));
+	const symlinkSafe = realParent === realBase || (realParent + _path.sep).startsWith(realBase + _path.sep);
+
+	return {safe: symlinkSafe, resolved};
+}
+
+function realpathNearestExisting(dir) {
+	let current = dir;
+	while (!existsSync(current)) {
+		const parent = _path.dirname(current);
+		if (parent === current) break; // reached filesystem root without finding anything real
+		current = parent;
+	}
+	return realpathSync(current);
+}
+
+function containsTraversalSegment(name) {
+	if (!name) return false;
+	const segments = name.split(/[\\/]/);
+	if (segments.length > 1) return true; // any separator at all is disallowed here
+	return segments.includes('..');
+}
+
+function abortOnTraversal(what, value, resolved) {
+	console.error(chalk.red(`\n[SECURITY ALERT] Blocked a path traversal breakout attempt (${what}).`));
+	console.error(chalk.red(`Offending value: ${value}`));
+	if (resolved) {
+		console.error(chalk.red(`Resolved target: ${resolved}`));
+	}
+	process.exit(1);
+}
+
+function getSanitizedPathName(path) {
+	const nonAllowedCharacters = /[<>:"/\\|?*]/g;
+	return path.replace(nonAllowedCharacters, "_");
 }
 
 function buildFileIndex(directory, directoryPath) {
@@ -140,7 +213,7 @@ function updateOverallProgressBar(append) {
 		});
 	} else {
 		let fileCount = Object.keys(fileIdToPath).length;
-		let downloadedCount = Object.keys(downloaded).length;
+		let downloadedCount = downloaded.length;
 		let pct = (downloadedCount / fileCount) * 100;
 		overallProgress.update(pct, {
 			label: `${downloadedCount} of ${fileCount} files downloaded ${append || ''}`
@@ -165,8 +238,8 @@ function updateCurrentFileProgress(percent, label) {
 
 }
 
-function mkdirIfNotExists(path) {
-	existsSync(`./${path}`) || mkdirSync(`./${path}`, {recursive: true});
+function mkdirIfNotExists(absolutePath) {
+	existsSync(absolutePath) || mkdirSync(absolutePath, {recursive: true});
 }
 
 function printHelpExit() {
@@ -214,10 +287,15 @@ async function sendsafelyThen(method, path, body) {
 	return await fetch(fullURL, options)
 		.then((response) => response.json())
 		.then(data => data)
-		.catch(console.warn);
+		.catch((err) => {
+			console.error(chalk.red(`API request failed: ${method} ${path} — ${err.message}`));
+			process.exit(1);
+		});
 }
 
 function calculateSignature(data) {
-	const hmacFunction = new sjcl.misc.hmac(sjcl.codec.utf8String.toBits(apiSecret), sjcl.hash.sha256); // Key, Hash
-	return sjcl.codec.hex.fromBits(hmacFunction.encrypt(data));
+	return crypto
+		.createHmac('sha256', apiSecret)
+		.update(data)
+		.digest('hex');
 }
