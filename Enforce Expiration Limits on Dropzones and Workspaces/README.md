@@ -2,7 +2,7 @@
 
 ## Requirements
 
-This script can be run from AWS Lambda (using NodeJS) or from the command line of any system with NodeJS installed.
+This script can be run from AWS Lambda (using NodeJS) or from the command line of any system with NodeJS(18+) installed.
 
 The script will expire packages on a USER-basis, for a given SendSafely USER API key and secret.
 
