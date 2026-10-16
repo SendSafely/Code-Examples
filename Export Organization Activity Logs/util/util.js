@@ -172,7 +172,6 @@ async function sendsafelyThen(creds, method, path, body, rowIndex, pageSize) {
 
   const headers = {
     "ss-api-key": ssApiKey,
-    'ss-api-secret': ssApiSecret,
     "ss-request-signature": signature,
     "ss-request-timestamp": timestamp,
     "Content-Type": "application/json"
