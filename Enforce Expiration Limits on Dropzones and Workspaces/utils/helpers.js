@@ -1,4 +1,4 @@
-const axiosRequest = require("./axiosRequest");
+const sendsafelyRequest = require("./sendsafelyRequest");
 
 /**
  * Adds _ALLDIRS property to each workspace (ws) , which contains every directory (dir) in ws,
@@ -40,7 +40,7 @@ const deleteFileFromDirWs = async function(config = {}) {
             console.log(`Deleting "${fileName}" from Workspace "${packageDescriptor}" Directory "${directoryName}", because it is ${daysOver} days(s) older than max of ${MaxWorkspaceFileAge} day(s). 
         (packageId: ${packageId}, directoryId: ${directoryId}, fileId: ${fileId}, fileUploaded: ${fileUploaded})...`);
 
-            const {data} = await axiosRequest(credentials, "DELETE", `/api/v2.0/package/${packageId}/directory/${directoryId}/file/${fileId}/`);
+            const {data} = await sendsafelyRequest(credentials, "DELETE", `/api/v2.0/package/${packageId}/directory/${directoryId}/file/${fileId}/`);
 
             if(data.response === "SUCCESS") {
                 console.log(`Success deleting "${fileName}" from Workspace "${packageDescriptor}" Directory "${directoryName}", because it is ${daysOver} days(s) old, and max life is ${MaxWorkspaceFileAge} day(s).`);
@@ -95,7 +95,7 @@ const getAllDirectoriesRecursively = async function (config = {}) {
 
     try {
 
-        const {data} = await axiosRequest(credentials, "GET", `/api/v2.0/package/${packageId}/directory/${directoryId}`);
+        const {data} = await sendsafelyRequest(credentials, "GET", `/api/v2.0/package/${packageId}/directory/${directoryId}`);
 
         if(data.response === "SUCCESS") {
             //console.log(`Success fetching directory data for directory "${directoryId}", in packageId "${packageId}".`);
@@ -148,7 +148,7 @@ const getAllFilesInDirByPage = async function(config = {}) {
     if(files.length === 100) {
         try {
             console.log(`Fetching additional files, from index: ${fileIndex} – ${nextIndex}, for directory "${directoryName}"...`);
-            const {data} = await axiosRequest(credentials,
+            const {data} = await sendsafelyRequest(credentials,
                 "GET", `/api/v2.0/package/${packageId}/directory/${directoryId}`,
                 {params: {fileIndex: nextIndex}});
 
@@ -183,7 +183,7 @@ const getAllSubDirsInDirByPage = async function(config = {}) {
     if(subDirectories.length === 100) {
         try {
             console.log(`Fetching additional sub-directories, from index: ${directoryIndex} – ${nextIndex}, for directory "${directoryName}"...`);
-            const {data} = await axiosRequest(credentials,
+            const {data} = await sendsafelyRequest(credentials,
                 "GET", `/api/v2.0/package/${packageId}/directory/${directoryId}`,
                 {params: {directoryIndex: nextIndex}});
 
@@ -246,7 +246,7 @@ const getOrgPackagesByPage = async function( config = {}){
     try {
         console.log(`Fetching records ${startIndex} – ${endIndex}...`);
         // Note: 'packageLife' is property name when packages returned here, but 'life' when /api/v2.0/package/ is queried
-        const {data} = await axiosRequest(credentials, "POST", "/api/v2.0/package/organization/search/", {body, rowIndex: initialRowIndex, pageSize});
+        const {data} = await sendsafelyRequest(credentials, "POST", "/api/v2.0/package/organization/search/", {body, rowIndex: initialRowIndex, pageSize});
         if(data.response === "SUCCESS") {
             console.log(`Success fetching records ${startIndex} – ${endIndex}.`);
         } else {
@@ -264,7 +264,7 @@ const getPackageInformation = async function(config = {}) {
     const {packageId, credentials} = config;
     try {
         console.log(`Getting package information for package id ${packageId}...`);
-        const {data} = await axiosRequest(credentials, "GET", `/api/v2.0/package/${packageId}`);
+        const {data} = await sendsafelyRequest(credentials, "GET", `/api/v2.0/package/${packageId}`);
         if(data.response === "SUCCESS") {
             console.log(`Success getting package information for package id ${packageId}.`);
         } else {
@@ -313,7 +313,7 @@ const setExpiryOnPackages = async function(config = {}) {
                 console.log(`DRYRUN: Updating (dropzone) package id "${pkg.packageId}" expiration from ${pkg.packageLife} days to ${expiryValue} days...`);
             } else {
                 console.log(`Updating (dropzone) package id "${pkg.packageId}" expiration from ${pkg.packageLife} days to ${expiryValue} days...`);
-                const {data} = await axiosRequest(credentials, "POST", `/api/v2.0/package/${pkg.packageId}/`, {body, rowIndex: 0, pageSize: 0});
+                const {data} = await sendsafelyRequest(credentials, "POST", `/api/v2.0/package/${pkg.packageId}/`, {body, rowIndex: 0, pageSize: 0});
                 if(data.response === "SUCCESS") {
                     updatedPackages.push(listOfPackages[i]);
                     console.log(`Success updating (dropzone) package id "${pkg.packageId}" expiration from ${pkg.packageLife} days to ${expiryValue} days.`);

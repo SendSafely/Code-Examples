@@ -1,6 +1,6 @@
 # Instructions for running Organization Activity Export Scripts #
 
-The Organization Activity Export scripts require Node.js installed to run them. 
+The Organization Activity Export scripts require Node.js(version 18+) installed to run them. 
 
 - **GetOrganizationActivity.js** - exports all sent and received activity within your SendSafely portal within the specified timeframe
 - **GetOrganizationDownloads.js** - exports all of the confirmed download activity for sent and received items within your SendSafely portal within the specified timeframe
@@ -25,12 +25,7 @@ const toDate = '10/10/2020';
 
 /* END USER DEFINED PARAMETERS */
 ```
-
-**4)** Save the edited scripts and open a command line window. Navigate to the folder containing the scripts and run the following command to install required node modules (this command must be run from the same folder where the scripts are stored):
-
-`npm install`
-
-**5)** Next, the scripts can be run using the following commands:
+**4)** Next, the scripts can be run using the following commands:
 
 `npm run activity`
 
