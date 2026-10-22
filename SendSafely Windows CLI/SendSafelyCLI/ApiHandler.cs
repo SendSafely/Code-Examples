@@ -298,7 +298,7 @@ namespace SendSafelyCLI
 
             if (info.IsWorkspace)
             {
-                Directory rootDir = api.GetDirectory(info.PackageId, info.RootDirectoryId);
+                Directory rootDir = api.GetDirectory(info.PackageId, info.RootDirectoryId, 0, 0);
                 Stack<String> parentDirectoryIdTracker = new Stack<String>();
                 Stack<String> nestedFolderTracker = new Stack<String>();
                 while (true)
@@ -342,17 +342,17 @@ namespace SendSafelyCLI
                             {
                                 String directoryId = parentDirectoryIdTracker.Pop();
                                 nestedFolderTracker.Pop();
-                                rootDir = api.GetDirectory(info.PackageId, directoryId);
+                                rootDir = api.GetDirectory(info.PackageId, directoryId, 0, 0);
                             }
                             else
                             {
-                                rootDir = api.GetDirectory(info.PackageId, rootDir.DirectoryId);
+                                rootDir = api.GetDirectory(info.PackageId, rootDir.DirectoryId, 0, 0);
                             }
                         } else
                         {
                             SendSafely.Objects.DirectoryResponse directory = rootDir.SubDirectories[itemNumber];
                             parentDirectoryIdTracker.Push(rootDir.DirectoryId);                       
-                            rootDir = api.GetDirectory(info.PackageId, directory.DirectoryId);
+                            rootDir = api.GetDirectory(info.PackageId, directory.DirectoryId, 0, 0);
                             nestedFolderTracker.Push(SanitizePathComponent(rootDir.DirectoryName));
                             Console.WriteLine("Viewing directory (" + rootDir.DirectoryName +")");
                         }
@@ -570,7 +570,7 @@ namespace SendSafelyCLI
             verifyPackageLoaded();
             validateArguments(args, 0);
             PackageInformation info = packages[currentPackageId];
-            api.DeleteTempPackage(info.PackageId);
+            api.DeletePackage(info.PackageId);
             Console.WriteLine("Package " + info.PackageId + " deleted.");
         }
 
