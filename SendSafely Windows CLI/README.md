@@ -24,10 +24,10 @@ See the help center article:
 
 ## Building from source
 
-Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (or newer).
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (or newer).
 
 ```
-build_cli.bat            framework-dependent build (needs the .NET 8 runtime to run)
+build_cli.bat            framework-dependent build (needs the .NET 10 runtime to run)
 build_cli.bat single     self-contained single-file exe (what the releases ship)
 ```
 
