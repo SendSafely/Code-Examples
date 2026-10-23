@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Security;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using SendSafely;
 using SendSafely.Objects;
@@ -30,14 +34,35 @@ namespace SendSafelyExportUtility
       
             String archivePath = System.AppContext.BaseDirectory;
                         
-            String fileVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).FileVersion;
+            // Assembly.Location is empty in a single-file publish, so read the version
+            // from assembly metadata instead of the file on disk.
+            String fileVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ?? "unknown";
             Console.WriteLine("\nSendSafely Export Utility " + fileVersion + "\n");
             if (args.Length == 1 && args[0].ToString().Equals("-genOrgKey"))
             {
                 Console.WriteLine("Generating new enterprise key pair");
+                Console.WriteLine("Generating the key can take a few minutes. Please do not close this window.");
                 String currentTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
                 CryptUtility cu = new CryptUtility();
-                Keypair keyPair = cu.GenerateKeyPair("no-reply@sendsafely.com");
+                Keypair keyPair;
+                // The SDK reports no progress during key generation, and at 4096 bits it can
+                // run for a minute or more, so print a heartbeat to show the tool hasn't hung.
+                using (CancellationTokenSource generationDone = new CancellationTokenSource())
+                {
+                    Task heartbeat = PrintDotsUntilCancelled(TimeSpan.FromSeconds(1), generationDone.Token);
+                    try
+                    {
+                        keyPair = cu.GenerateKeyPair("no-reply@sendsafely.com", KeySize.SIZE_4096);
+                    }
+                    finally
+                    {
+                        // Wait for the heartbeat to stop so no dot lands after the line break.
+                        generationDone.Cancel();
+                        heartbeat.Wait();
+                        Console.WriteLine();
+                    }
+                }
                 System.IO.File.WriteAllText(archivePath + currentTimestamp + ".private_key.txt", keyPair.PrivateKey);
                 System.IO.File.WriteAllText(archivePath + currentTimestamp + ".public_key.txt", keyPair.PublicKey);
                 Console.WriteLine("A new key pair has been written to " + currentTimestamp + ".private_key.txt and " + currentTimestamp + ".public_key.txt");
@@ -241,11 +266,11 @@ namespace SendSafelyExportUtility
                         foreach (File file in fullPackageInfo.Files)
                         {
                             Console.WriteLine("Downloading file: " + file.FileName + " [File Size: " + file.FileSize + "]");
-                            Console.WriteLine(keycode);
                             System.IO.FileInfo fileInfo = sendSafely.DownloadFile(pInfo.PackageId, file.FileId, keycode, new ProgressCallback());
-                            fileInfo.MoveTo(archivePath + "\\_" + pInfo.PackageId + "\\" + file.FileName);
+                            string targetPath = CombinePathSafe(System.IO.Path.Combine(archivePath, "_" + pInfo.PackageId), file.FileName, archivePath);
+                            fileInfo.MoveTo(targetPath);
                             Console.WriteLine();
-                            Console.WriteLine("File saved: " + archivePath + "\\_" + pInfo.PackageId + "\\" + file.FileName);
+                            Console.WriteLine("File saved: " + targetPath);
                         }
                         if (originalPackageLife > 0)
                         {
@@ -280,7 +305,54 @@ namespace SendSafelyExportUtility
             }
             Console.WriteLine("DONE");
         }
-    }
+        private static async Task PrintDotsUntilCancelled(TimeSpan interval, CancellationToken token)
+        {
+            try
+            {
+                while (true)
+                {
+                    await Task.Delay(interval, token);
+                    Console.Write(".");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
 
-   
+        private static string SanitizePathComponent(string name)
+        {
+            string sanitized = System.IO.Path.GetFileName(name);
+
+            if (string.IsNullOrWhiteSpace(sanitized) || sanitized == "." || sanitized == "..")
+            {
+                throw new ArgumentException("Invalid path component received from server: " + name);
+            }
+
+            return sanitized;
+        }
+
+        private static void ValidatePathContainment(string candidatePath, string basePath)
+        {
+            string fullCandidate = System.IO.Path.GetFullPath(candidatePath);
+            string fullBase = System.IO.Path.GetFullPath(basePath);
+
+            if (!fullBase.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
+            {
+                fullBase += System.IO.Path.DirectorySeparatorChar;
+            }
+
+            if (!fullCandidate.StartsWith(fullBase, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new SecurityException("Security error: resolved path '" + fullCandidate + "' escapes the download directory '" + fullBase + "'.");
+            }
+        }
+
+        private static string CombinePathSafe(string basePath, string fileName, string containmentRoot)
+        {
+            string combined = System.IO.Path.Combine(basePath, SanitizePathComponent(fileName));
+            ValidatePathContainment(combined, containmentRoot);
+            return combined;
+        }
+    }
 }
